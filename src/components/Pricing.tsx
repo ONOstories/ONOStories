@@ -1,14 +1,11 @@
 import React from 'react';
 import { Check, Crown, Star, Zap } from 'lucide-react';
-import { useAuth } from '../hooks/useAuth';
 
 interface PricingProps {
   setCurrentPage: (page: string) => void;
 }
 
 export function Pricing({ setCurrentPage }: PricingProps) {
-  const { user, isPro } = useAuth();
-
   const plans = [
     {
       name: 'Free',
@@ -22,7 +19,7 @@ export function Pricing({ setCurrentPage }: PricingProps) {
         'Basic story experience'
       ],
       buttonText: 'Get Started Free',
-      buttonAction: () => user ? setCurrentPage('library') : setCurrentPage('auth'),
+      buttonAction: () => setCurrentPage('library'),
       popular: false,
       gradient: 'from-gray-500 to-gray-600'
     },
@@ -40,7 +37,7 @@ export function Pricing({ setCurrentPage }: PricingProps) {
         'Story history & regeneration',
         'Priority customer support'
       ],
-      buttonText: isPro ? 'Current Plan' : 'Start Pro Monthly',
+      buttonText: 'Start Pro Monthly',
       buttonAction: () => handleSubscription('monthly'),
       popular: true,
       gradient: 'from-purple-600 to-pink-600'
@@ -85,30 +82,8 @@ export function Pricing({ setCurrentPage }: PricingProps) {
   ];
 
   const handleSubscription = (plan: string) => {
-    if (!user) {
-      setCurrentPage('auth');
-      return;
-    }
-    
-    // Simulate subscription upgrade with localStorage
-    if (user && profile) {
-      const updatedProfile = {
-        ...profile,
-        subscription_status: 'pro' as const,
-        subscription_expires_at: plan === 'annual' 
-          ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
-          : plan === '6month'
-          ? new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString()
-          : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-      };
-      
-      localStorage.setItem('onostories_profile', JSON.stringify(updatedProfile));
-      
-      alert(`Successfully upgraded to ${plan} plan! You now have Pro access. Please refresh the page to see your new features.`);
-      
-      // Refresh the page to update the auth state
-      window.location.reload();
-    }
+    alert(`This is a demo app. In a real application, this would redirect to payment processing for the ${plan} plan.`);
+    setCurrentPage('dashboard');
   };
 
   return (
@@ -173,14 +148,7 @@ export function Pricing({ setCurrentPage }: PricingProps) {
 
               <button
                 onClick={plan.buttonAction}
-                disabled={isPro && plan.name.includes('Pro')}
-                className={`w-full py-4 rounded-xl font-semibold transition-all transform hover:scale-105 ${
-                  isPro && plan.name.includes('Pro')
-                    ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                    : plan.popular
-                    ? `bg-gradient-to-r ${plan.gradient} text-white hover:shadow-lg`
-                    : `bg-gradient-to-r ${plan.gradient} text-white hover:shadow-lg`
-                }`}
+                className={`w-full py-4 rounded-xl font-semibold transition-all transform hover:scale-105 bg-gradient-to-r ${plan.gradient} text-white hover:shadow-lg`}
               >
                 {plan.buttonText}
               </button>

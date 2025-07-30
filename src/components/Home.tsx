@@ -40,7 +40,7 @@ export function Home({ setCurrentPage }: HomeProps) {
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <button
-                onClick={() => setCurrentPage('pricing')}
+                onClick={() => setCurrentPage('dashboard')}
                 className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition-all transform hover:scale-105 shadow-lg flex items-center space-x-2"
               >
                 <span>Start Creating</span>
@@ -217,7 +217,7 @@ export function Home({ setCurrentPage }: HomeProps) {
             Join thousands of parents creating magical memories through personalized storytelling.
           </p>
           <button
-            onClick={() => setCurrentPage('pricing')}
+            onClick={() => setCurrentPage('dashboard')}
             className="bg-white text-purple-600 px-8 py-4 rounded-full text-lg font-semibold hover:bg-gray-100 transition-all transform hover:scale-105 shadow-lg"
           >
             Get Started Today

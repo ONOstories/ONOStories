@@ -6,10 +6,8 @@ import {
   Trash2, 
   Plus,
   Image as ImageIcon,
-  Sparkles,
-  Settings
+  Sparkles
 } from 'lucide-react';
-import { useAuth } from '../hooks/useAuth';
 import { mockGeneratedStories } from '../lib/mockData';
 
 interface DashboardProps {
@@ -17,7 +15,6 @@ interface DashboardProps {
 }
 
 export function Dashboard({ setCurrentPage }: DashboardProps) {
-  const { user, isPro } = useAuth();
   const [activeTab, setActiveTab] = useState<'create' | 'history' | 'photos'>('create');
   const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([]);
   const [storyForm, setStoryForm] = useState({
@@ -44,26 +41,6 @@ export function Dashboard({ setCurrentPage }: DashboardProps) {
       thumbnail: "https://images.pexels.com/photos/220201/pexels-photo-220201.jpeg?auto=compress&cs=tinysrgb&w=400"
     }));
   });
-
-  if (!isPro) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 flex items-center justify-center px-4">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Settings className="h-8 w-8 text-white" />
-          </div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Pro Dashboard</h2>
-          <p className="text-xl text-gray-600 mb-8">Upgrade to Pro to access the story creation dashboard</p>
-          <button
-            onClick={() => setCurrentPage('pricing')}
-            className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-3 rounded-full hover:from-purple-700 hover:to-pink-700 transition-all"
-          >
-            Upgrade to Pro
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -119,7 +96,7 @@ export function Dashboard({ setCurrentPage }: DashboardProps) {
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
-            Pro Dashboard
+            Story Creation Dashboard
           </h1>
           <p className="text-xl text-gray-600">
             Create and manage your child's personalized stories
