@@ -1,6 +1,7 @@
 import React from 'react';
 import { BookOpen, Lock, Download, Eye, Star } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { demoStories, personalizedStories } from '../lib/mockData';
 
 interface StoryLibraryProps {
   setCurrentPage: (page: string) => void;
@@ -9,103 +10,21 @@ interface StoryLibraryProps {
 export function StoryLibrary({ setCurrentPage }: StoryLibraryProps) {
   const { user, isPro } = useAuth();
 
-  const demoStories = [
-    {
-      id: 1,
-      title: "The Brave Little Explorer",
-      genre: "Adventure",
-      description: "Join our young hero on a magical quest through enchanted forests and mysterious caves.",
-      thumbnail: "https://images.pexels.com/photos/1266808/pexels-photo-1266808.jpeg?auto=compress&cs=tinysrgb&w=400",
-      character: "Alex",
-      isPremium: false,
-      rating: 4.8,
-      duration: "8 min read"
-    },
-    {
-      id: 2,
-      title: "The Magic Paintbrush",
-      genre: "Creativity",
-      description: "Discover the power of imagination with a paintbrush that brings drawings to life.",
-      thumbnail: "https://images.pexels.com/photos/1108099/pexels-photo-1108099.jpeg?auto=compress&cs=tinysrgb&w=400",
-      character: "Maya",
-      isPremium: false,
-      rating: 4.9,
-      duration: "6 min read"
-    },
-    {
-      id: 3,
-      title: "The Friendly Dragon",
-      genre: "Friendship",
-      description: "Learn about friendship and kindness with a gentle dragon who just wants to play.",
-      thumbnail: "https://images.pexels.com/photos/1148998/pexels-photo-1148998.jpeg?auto=compress&cs=tinysrgb&w=400",
-      character: "Sam",
-      isPremium: false,
-      rating: 4.7,
-      duration: "7 min read"
-    },
-    {
-      id: 4,
-      title: "The Space Adventure",
-      genre: "Education",
-      description: "Blast off to learn about planets, stars, and the wonders of space exploration.",
-      thumbnail: "https://images.pexels.com/photos/220201/pexels-photo-220201.jpeg?auto=compress&cs=tinysrgb&w=400",
-      character: "Jordan",
-      isPremium: false,
-      rating: 4.6,
-      duration: "9 min read"
-    },
-    {
-      id: 5,
-      title: "The Underwater Kingdom",
-      genre: "Adventure",
-      description: "Dive deep into the ocean to discover a magical underwater world full of sea creatures.",
-      thumbnail: "https://images.pexels.com/photos/1076758/pexels-photo-1076758.jpeg?auto=compress&cs=tinysrgb&w=400",
-      character: "Riley",
-      isPremium: false,
-      rating: 4.8,
-      duration: "8 min read"
-    }
-  ];
 
-  const personalizedStories = [
-    {
-      id: 6,
-      title: "Your Child's Space Mission",
-      genre: "Educational",
-      description: "Your child becomes an astronaut on an exciting mission to Mars.",
-      isPremium: true,
-      customizable: true
-    },
-    {
-      id: 7,
-      title: "The Magical Forest Adventure",
-      genre: "Fantasy",
-      description: "Your child discovers a hidden forest where magical creatures need help.",
-      isPremium: true,
-      customizable: true
-    },
-    {
-      id: 8,
-      title: "Super Helper at School",
-      genre: "Moral",
-      description: "Your child learns about helping others through a heartwarming school story.",
-      isPremium: true,
-      customizable: true
-    }
-  ];
-
-  const handleViewStory = (storyId: number) => {
-    // In a real app, this would navigate to a story viewer
-    alert(`Viewing story ${storyId}. In the full app, this would open the interactive story reader.`);
+  const handleViewStory = (storyId: string) => {
+    // Simulate story viewing
+    const story = demoStories.find(s => s.id === storyId);
+    alert(`Opening "${story?.title}" story reader. In a real app, this would display the full interactive story.`);
   };
 
-  const handleDownloadStory = (storyId: number) => {
+  const handleDownloadStory = (storyId: string) => {
     if (!isPro) {
       setCurrentPage('pricing');
       return;
     }
-    // In a real app, this would generate and download the PDF
-    alert(`Downloading story ${storyId} as PDF. This would trigger the PDF generation in the full app.`);
+    // Simulate PDF download
+    const story = personalizedStories.find(s => s.id === storyId);
+    alert(`Downloading "${story?.title}" as PDF. In a real app, this would generate and download the PDF file.`);
   };
 
   if (!user) {

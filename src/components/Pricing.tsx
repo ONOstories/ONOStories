@@ -90,9 +90,25 @@ export function Pricing({ setCurrentPage }: PricingProps) {
       return;
     }
     
-    // This would integrate with Stripe
-    console.log(`Starting ${plan} subscription...`);
-    alert(`Stripe integration would handle ${plan} subscription here. This is a demo.`);
+    // Simulate subscription upgrade with localStorage
+    if (user && profile) {
+      const updatedProfile = {
+        ...profile,
+        subscription_status: 'pro' as const,
+        subscription_expires_at: plan === 'annual' 
+          ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+          : plan === '6month'
+          ? new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString()
+          : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+      };
+      
+      localStorage.setItem('onostories_profile', JSON.stringify(updatedProfile));
+      
+      alert(`Successfully upgraded to ${plan} plan! You now have Pro access. Please refresh the page to see your new features.`);
+      
+      // Refresh the page to update the auth state
+      window.location.reload();
+    }
   };
 
   return (

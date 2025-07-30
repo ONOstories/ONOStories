@@ -10,6 +10,7 @@ import {
   Settings
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { mockGeneratedStories } from '../lib/mockData';
 
 interface DashboardProps {
   setCurrentPage: (page: string) => void;
@@ -32,22 +33,17 @@ export function Dashboard({ setCurrentPage }: DashboardProps) {
     'Moral Stories': ['Kindness Chronicles', 'Honesty Heroes', 'Sharing Stories', 'Courage Tales', 'Custom Moral']
   };
 
-  const [generatedStories] = useState([
-    {
-      id: 1,
-      title: "Emma's Space Adventure",
-      genre: "Educational",
-      createdAt: "2024-01-15",
+  // Use mock data and localStorage for generated stories
+  const [generatedStories, setGeneratedStories] = useState(() => {
+    const saved = localStorage.getItem('onostories_generated_stories');
+    return saved ? JSON.parse(saved) : mockGeneratedStories.map(story => ({
+      id: parseInt(story.id),
+      title: story.title,
+      genre: story.genre,
+      createdAt: story.created_at.split('T')[0],
       thumbnail: "https://images.pexels.com/photos/220201/pexels-photo-220201.jpeg?auto=compress&cs=tinysrgb&w=400"
-    },
-    {
-      id: 2,
-      title: "Emma and the Magic Forest",
-      genre: "Bedtime Stories",
-      createdAt: "2024-01-12",
-      thumbnail: "https://images.pexels.com/photos/1148998/pexels-photo-1148998.jpeg?auto=compress&cs=tinysrgb&w=400"
-    }
-  ]);
+    }));
+  });
 
   if (!isPro) {
     return (
@@ -87,13 +83,35 @@ export function Dashboard({ setCurrentPage }: DashboardProps) {
       return;
     }
     
-    // In a real app, this would trigger the AI story generation
-    alert('Story generation started! This would trigger the AI workflow in the full app.');
+    // Simulate story creation with local state
+    const newStory = {
+      id: Date.now(),
+      title: `${storyForm.childName}'s ${storyForm.subGenre || storyForm.genre} Adventure`,
+      genre: storyForm.genre,
+      createdAt: new Date().toISOString().split('T')[0],
+      thumbnail: "https://images.pexels.com/photos/220201/pexels-photo-220201.jpeg?auto=compress&cs=tinysrgb&w=400"
+    };
+    
+    const updatedStories = [...generatedStories, newStory];
+    setGeneratedStories(updatedStories);
+    localStorage.setItem('onostories_generated_stories', JSON.stringify(updatedStories));
+    
+    // Reset form
+    setStoryForm({
+      childName: '',
+      genre: '',
+      subGenre: '',
+      customGenre: ''
+    });
+    setUploadedPhotos([]);
+    
+    alert(`Story "${newStory.title}" has been created! Check your Story History tab.`);
   };
 
   const handleDownloadStory = (storyId: number) => {
-    // In a real app, this would generate and download the PDF
-    alert(`Downloading story ${storyId} as PDF.`);
+    // Simulate PDF download
+    const story = generatedStories.find(s => s.id === storyId);
+    alert(`Downloading "${story?.title}" as PDF. In a real app, this would generate and download the PDF file.`);
   };
 
   return (
