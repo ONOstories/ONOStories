@@ -10,6 +10,7 @@ import {
   Shield,
   Zap
 } from 'lucide-react';
+import { AnimatedTestimonials } from './ui/animated-testimonials';
 
 interface HomeProps {
   setCurrentPage: (page: string) => void;
@@ -33,7 +34,7 @@ export function Home({ setCurrentPage }: HomeProps) {
               Story Adventure
             </h1>
             
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8 leading-relaxed">
+            <p className="text-xl text-gray-700/90 max-w-3xl mx-auto mb-8 leading-relaxed">
               Create magical, personalized storybooks where your child becomes the hero. 
               Watch their imagination come alive with AI-generated stories and beautiful illustrations.
             </p>
@@ -69,50 +70,49 @@ export function Home({ setCurrentPage }: HomeProps) {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 px-4 bg-white">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Why Parents Love ONOSTORIES
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Every story is uniquely crafted to engage your child's imagination and create lasting memories.
-            </p>
-          </div>
+      <section className="py-20 px-4 bg-gradient-to-br from-[#FFF7ED] to-[#FFE9F3]">
+  <div className="max-w-7xl mx-auto">
+    {/* ----------  HEADLINE  ---------- */}
+    <div className="text-center mb-16">
+      <h2 className="text-4xl font-extrabold tracking-tight text-[#2E1065] md:text-5xl">
+        Why Parents Love ONOSTORIES
+      </h2>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center p-8 rounded-2xl bg-gradient-to-br from-purple-50 to-pink-50 hover:shadow-lg transition-all">
-              <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Heart className="h-8 w-8 text-white" />
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Personalized Stories</h3>
-              <p className="text-gray-600 leading-relaxed">
-                Your child becomes the main character in every adventure, with stories tailored to their interests and personality.
-              </p>
-            </div>
+      <p className="mt-4 text-xl leading-8 text-[#4C1D95] max-w-2xl mx-auto">
+        Every story is uniquely crafted to engage your child's imagination and create lasting memories.
+      </p>
+    </div>
 
-            <div className="text-center p-8 rounded-2xl bg-gradient-to-br from-orange-50 to-yellow-50 hover:shadow-lg transition-all">
-              <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-yellow-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Zap className="h-8 w-8 text-white" />
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">AI-Powered Magic</h3>
-              <p className="text-gray-600 leading-relaxed">
-                Advanced AI creates unique stories and stunning illustrations that bring your child's adventures to life.
-              </p>
-            </div>
+    {/* ----------  TESTIMONIALS  ---------- */}
+    <AnimatedTestimonials
+      testimonials={[
+        {
+          name: 'Personalized Stories',
+          designation: '',
+          quote:
+            'Your child becomes the main character in every adventure, with stories tailored to their interests and personality.',
+          src: 'src/assets/Personalized.png',
+        },
+        {
+          name: 'AI-Powered Magic',
+          designation: '',
+          quote:
+            'Advanced AI creates unique stories and stunning illustrations that bring your child\'s adventures to life.',
+          src: 'src/assets/Ai powered.png',
+        },
+        {
+          name: 'Safe & Educational',
+          designation: '',
+          quote:
+            'All content is child-friendly and designed to promote learning, creativity, and positive values.',
+          src: 'src/assets/Safe and educational.png',
+        },
+      ]}
 
-            <div className="text-center p-8 rounded-2xl bg-gradient-to-br from-green-50 to-blue-50 hover:shadow-lg transition-all">
-              <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Shield className="h-8 w-8 text-white" />
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Safe & Educational</h3>
-              <p className="text-gray-600 leading-relaxed">
-                All content is child-friendly and designed to promote learning, creativity, and positive values.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+    />
+  </div>
+</section>
+
 
       {/* How It Works */}
       <section className="py-20 px-4 bg-gradient-to-br from-gray-50 to-purple-50">
@@ -121,7 +121,7 @@ export function Home({ setCurrentPage }: HomeProps) {
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
               Create Magic in 3 Simple Steps
             </h2>
-            <p className="text-xl text-gray-600">
+            <p className="text-xl text-gray-700/90">
               From photos to personalized storybook in minutes
             </p>
           </div>
@@ -132,7 +132,7 @@ export function Home({ setCurrentPage }: HomeProps) {
                 1
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Upload Photos</h3>
-              <p className="text-gray-600 leading-relaxed">
+              <p className="text-gray-700/90 leading-relaxed">
                 Upload 4-5 photos of your child to create a personalized character for their stories.
               </p>
             </div>
@@ -142,7 +142,7 @@ export function Home({ setCurrentPage }: HomeProps) {
                 2
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Choose Genre</h3>
-              <p className="text-gray-600 leading-relaxed">
+              <p className="text-gray-800/95 mb-6 italic">
                 Select from educational, bedtime, or moral stories, with multiple sub-genres to explore.
               </p>
             </div>
