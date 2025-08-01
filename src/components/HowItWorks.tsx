@@ -7,9 +7,9 @@ export function HowItWorks() {
   return (
     /* ❶ The beam must receive ONE child whose total height includes header + steps */
     <TracingBeam>
-      <section className="px-6 max-w-3xl mx-auto">
+      <section className="px-6 max-w-5xl mx-auto py-4 md:py-8">
         {/* ── HEADLINE ────────────────────────────── */}
-        <header className="text-center mt-12 mb-12">
+        <header className="text-center mt-8 mb-8 md:mt-10 md:mb-10">
           <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight text-[#2E1065]">
             How ONOStories Works
           </h2>
@@ -18,7 +18,7 @@ export function HowItWorks() {
           </p>
         </header>
 
-        {/* ── VERTICAL STEPS ─────────────────────── */}
+        {/* ── STEPS ──────────────────────────────── */}
         {steps.map(step => (
           <StepCard key={step.id} {...step} />
         ))}
@@ -29,12 +29,17 @@ export function HowItWorks() {
 
 /* Reusable card */
 function StepCard({ id, title, body, image }: (typeof steps)[number]) {
+  // For the second step, use md:flex-row (image left, text right), otherwise md:flex-row-reverse
+  const isSecond = id === 2;
   return (
-    <article className="mb-24 flex flex-col items-center text-center">
+    <article
+      className={`mb-24 flex flex-col ${isSecond ? "md:flex-row" : "md:flex-row-reverse"} md:items-center md:text-left text-center`}
+    >
+      {/* IMAGE */}
       <div
         className={twMerge(
-          "w-52 h-52 rounded-3xl overflow-hidden shadow-xl mb-8 flex items-center justify-center",
-          "bg-gray-100" // fallback bg so the number stays readable if no image
+          "w-72 h-72 md:w-80 md:h-80 rounded-3xl overflow-hidden shadow-xl",
+          "bg-gray-100 flex-shrink-0 mx-auto md:mx-0"
         )}
       >
         {image ? (
@@ -44,12 +49,19 @@ function StepCard({ id, title, body, image }: (typeof steps)[number]) {
             className="object-cover w-full h-full"
           />
         ) : (
-          <span className="text-5xl font-extrabold text-[#2E1065]">{id}</span>
+          <span className="flex items-center justify-center w-full h-full text-5xl font-extrabold text-[#2E1065]">
+            {id}
+          </span>
         )}
       </div>
 
-      <h3 className="text-2xl font-bold text-gray-900 mb-4">{title}</h3>
-      <p className="text-gray-700/90 leading-relaxed max-w-md">{body}</p>
+      {/* TEXT */}
+      <div className={`mt-8 md:mt-0 ${isSecond ? "md:ml-10" : "md:mr-10"}`}>
+        <h3 className="text-2xl font-bold text-gray-900 mb-4">{title}</h3>
+        <p className="text-gray-700/90 leading-relaxed max-w-md md:max-w-none">
+          {body}
+        </p>
+      </div>
     </article>
   );
 }
