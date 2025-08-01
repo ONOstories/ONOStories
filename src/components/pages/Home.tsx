@@ -1,26 +1,20 @@
-import React from 'react';
+"use client";
 import { 
-  BookOpen, 
   Sparkles, 
-  Download, 
-  Users, 
   Star, 
   ArrowRight,
-  Heart,
-  Shield,
-  Zap
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { WhatMakesSpecial } from '../../components/WhatMakesSpecial.tsx';
 import { HowItWorks } from '../../components/HowItWorks.tsx';
 import { PlayfulCTA } from "../../components/CTA.tsx";      // path as needed
 import { Footer } from "../../components/Footer.tsx";
 
-interface HomeProps {
-  setCurrentPage: (page: string) => void;
-}
 
-export function Home({ setCurrentPage }: HomeProps) {
+export function Home() {
+  const navigate = useNavigate();
   return (
+
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50">
       {/* Hero Section */}
       <section className="relative px-4 py-20 overflow-hidden">
@@ -44,14 +38,14 @@ export function Home({ setCurrentPage }: HomeProps) {
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <button
-                onClick={() => setCurrentPage('dashboard')}
+                onClick={() => navigate("/dashboard")}
                 className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition-all transform hover:scale-105 shadow-lg flex items-center space-x-2"
               >
                 <span>Start Creating</span>
                 <ArrowRight className="h-5 w-5" />
               </button>
               <button
-                onClick={() => setCurrentPage('library')}
+                onClick={() => navigate("/library")}
                 className="bg-white text-purple-600 px-8 py-4 rounded-full text-lg font-semibold hover:bg-gray-50 transition-all border-2 border-purple-200 shadow-lg"
               >
                 View Sample Stories
@@ -126,7 +120,7 @@ export function Home({ setCurrentPage }: HomeProps) {
       </section>
 
       {/* CTA Section */}
-      <PlayfulCTA setCurrentPage={setCurrentPage} />
+      <PlayfulCTA  />
 
       {/* Footer */}
       <Footer />

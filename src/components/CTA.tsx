@@ -1,9 +1,12 @@
 "use client";
 import { Mail, Facebook, Instagram, Twitter } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 /* Pastel CTA without stars ─ matches the WhatMakesSpecial palette */
-export function PlayfulCTA({ setCurrentPage }: { setCurrentPage: (p: string) => void }) {
+export function PlayfulCTA() {
+  const navigate = useNavigate();
   return (
+    
     <section className="relative overflow-hidden py-24 px-4">
       {/* shared peach-to-pink gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-[#FFF7ED] via-rose-200 to-[#FFE9F3]" />
@@ -22,7 +25,7 @@ export function PlayfulCTA({ setCurrentPage }: { setCurrentPage: (p: string) => 
         </p>
 
         <button
-          onClick={() => setCurrentPage("dashboard")}
+          onClick={() => navigate("/dashboard")}
           className="bg-white text-[#4C1D95] px-10 py-4 rounded-full text-lg font-semibold shadow-lg hover:bg-[#FFF7ED] active:scale-95 transition"
         >
           Get Started Today

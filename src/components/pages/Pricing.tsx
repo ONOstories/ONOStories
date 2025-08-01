@@ -1,18 +1,15 @@
 "use client";
 import React from "react";
 import { Check, Star, Hourglass } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
-interface PricingProps {
-  setCurrentPage: (page: string) => void;
-}
-
-export function Pricing({ setCurrentPage }: PricingProps) {
+export function Pricing() {
+  const navigate = useNavigate();
   /* ------------ helpers ------------ */
   const handleSubscription = (plan: string) => {
     alert(
       `This is a demo app. In a real application, this would redirect to payment processing for the ${plan} plan.`
     );
-    setCurrentPage("dashboard");
   };
 
   /* ------------ plan data ------------ */
@@ -29,7 +26,7 @@ export function Pricing({ setCurrentPage }: PricingProps) {
         "Basic story experience",
       ],
       buttonText: "Get Started Free",
-      buttonAction: () => setCurrentPage("library"),
+      buttonAction: () => navigate("library"),
       gradient: "from-gray-400 to-gray-500",
     },
     {
