@@ -31,8 +31,8 @@ export function Login() {
       // Reset form
       setFormData({ email: '', password: '' });
       
-      // Redirect to home/dashboard
-      navigate('/dashboard');
+      // Redirect to home/createstories
+      navigate('/createstories');
       setIsLoading(false);
     }, 1000);
   };

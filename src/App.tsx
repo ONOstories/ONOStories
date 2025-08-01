@@ -6,7 +6,7 @@ import { Login } from "./components/pages/Login";
 import { Signup } from "./components/pages/Signup";
 import { Pricing } from "./components/pages/Pricing";
 import { StoryLibrary } from "./components/StoryLibrary";
-import { Dashboard } from "./components/Dashboard";
+import { CreateStories } from "./components/CreateStories";
 
 export default function App() {
   return (
@@ -20,7 +20,7 @@ export default function App() {
           <Route path="/signup"    element={<Signup />} />
           <Route path="/pricing"   element={<Pricing />} />
           <Route path="/library"   element={<StoryLibrary />} />
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/createstories" element={<CreateStories />} />
           <Route path="*"          element={<Home />} />
         </Routes>
       </div>

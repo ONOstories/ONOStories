@@ -46,7 +46,7 @@ export function Navbar() {
           <button onClick={() => navigate("/library")} className={tab("/library")}>
             Story&nbsp;Library
           </button>
-          <button onClick={() => navigate("/dashboard")} className={tab("/dashboard")}>
+          <button onClick={() => navigate("/createstories")} className={tab("/createstories")}> 
             Create&nbsp;Stories
           </button>
           <button onClick={() => navigate("/pricing")} className={tab("/pricing")}>

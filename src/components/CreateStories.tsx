@@ -20,7 +20,7 @@ interface Story {
 }
 
 /* ---------- component ---------- */
-export function Dashboard() {
+export function CreateStories() {
   const [activeTab, setActiveTab] =
     useState<"create" | "history" | "photos">("create");
   const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([]);
@@ -132,7 +132,7 @@ export function Dashboard() {
         {/* header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
-            Story Creation Dashboard
+            Story Creation
           </h1>
           <p className="text-xl text-gray-600">
             Create and manage your child's personalized stories

@@ -41,8 +41,8 @@ export function Signup() {
       // Reset form
       setFormData({ fullName: '', email: '', password: '', confirmPassword: '' });
       
-      // Redirect to home/dashboard
-      navigate('/dashboard');
+      // Redirect to home/createstories
+      navigate('/createstories');
       setIsLoading(false);
     }, 1000);
   };

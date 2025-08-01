@@ -116,7 +116,7 @@ export function StoryLibrary() {
                   
                   <div className="flex space-x-2">
                     <button
-                      onClick={() => navigate("/dashboard")}
+                      onClick={() => navigate("/createstories")}
                       className="flex-1 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
                     >
                       Create Story
@@ -134,7 +134,7 @@ export function StoryLibrary() {
             
             {/* Create Custom Story Card */}
             <div className="bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl border-2 border-dashed border-purple-300 p-8 flex flex-col items-center justify-center text-center hover:border-purple-400 transition-colors cursor-pointer"
-                 onClick={() => navigate('dashboard')}>
+                 onClick={() => navigate('createstories')}>
               <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mb-4">
                 <BookOpen className="h-8 w-8 text-white" />
               </div>

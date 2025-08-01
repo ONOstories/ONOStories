@@ -24,7 +24,7 @@ export function PlayfulCTA() {
         </p>
 
         <button
-          onClick={() => navigate("/dashboard")}
+          onClick={() => navigate("/createstories")}
           className="bg-white text-[#4C1D95] px-10 py-4 rounded-full text-lg font-semibold shadow-lg hover:bg-[#FFF7ED] active:scale-95 transition"
         >
           Get Started Today
