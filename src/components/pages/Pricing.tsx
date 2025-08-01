@@ -1,26 +1,35 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import { Check, Star, Hourglass } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
+/* ----------  Badge (unchanged)  ---------- */
+function Badge({ text, icon }: { text: string; icon: React.ReactNode }) {
+  return (
+    <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+      <span className="flex items-center gap-1 bg-gradient-to-r from-[#4C1D95] to-[#2E1065] text-white px-4 py-1.5 rounded-full text-xs font-semibold">
+        {icon}
+        {text}
+      </span>
+    </div>
+  );
+}
+
+/* ----------  Main component  ---------- */
 export function Pricing() {
   const navigate = useNavigate();
-  /* ------------ helpers ------------ */
-  const handleSubscription = (plan: string) => {
-    alert(
-      `This is a demo app. In a real application, this would redirect to payment processing for the ${plan} plan.`
-    );
-  };
 
-  /* ------------ plan data ------------ */
+  /* billing-cycle state — "monthly" | "yearly"  */
+  const [cycle, setCycle] = useState<"monthly" | "yearly">("monthly");
+
+  /* base plan data (store monthly price only) */
   const plans = [
     {
       name: "Free",
-      price: "$0",
-      period: "forever",
+      monthly: 0,
       description: "Perfect for trying out ONOSTORIES",
       features: [
-        "4-5 pre-made demo stories",
+        "4–5 pre-made demo stories",
         "View stories online only",
         "Sample different story types",
         "Basic story experience",
@@ -30,9 +39,8 @@ export function Pricing() {
       gradient: "from-gray-400 to-gray-500",
     },
     {
-      name: "Pro Monthly",
-      price: "$9.99",
-      period: "per month",
+      name: "Pro",
+      monthly: 9.99,
       description: "Full access to personalized storytelling",
       features: [
         "Upload child photos (4-5 images)",
@@ -43,31 +51,14 @@ export function Pricing() {
         "Story history & regeneration",
         "Priority customer support",
       ],
-      buttonText: "Start Pro Monthly",
-      buttonAction: () => handleSubscription("monthly"),
+      buttonText: "Start Pro",
+      buttonAction: () => alert("Redirect to Pro checkout"),
       popular: true,
       gradient: "from-[#4C1D95] to-[#2E1065]",
     },
     {
-      name: "Pro 6-Month",
-      price: "$49.99",
-      period: "every 6 months",
-      originalPrice: "$59.94",
-      description: "Best value for regular storytellers",
-      features: [
-        "All Pro Monthly features",
-        "Save 17 % compared to monthly",
-        "Extended story library",
-        "Priority AI processing",
-      ],
-      buttonText: "Choose 6-Month Plan",
-      buttonAction: () => handleSubscription("6month"),
-      gradient: "from-purple-400 to-pink-500",
-    },
-    {
       name: "Premium (Coming Soon)",
-      price: "",
-      period: "",
+      monthly: null, // hide price until launch
       description: "Our most powerful plan is almost here!",
       features: [
         "Unlimited personalized stories",
@@ -86,10 +77,28 @@ export function Pricing() {
     },
   ];
 
-  /* ------------ render ------------ */
+  /* yearly discount constants */
+  const yearlyMultiplier = 0.7507;   // = 24.93 % off
+  const yearlyDiscountPercent = 25;  // rounded label
+
+  /* helper: derive yearly total & monthly-equiv labels */
+  const getPriceLabel = (monthly: number | null) => {
+    if (monthly === null) return "";
+
+    if (cycle === "monthly") {
+      // show single monthly amount → “$9.99”
+      return `$${monthly.toFixed(2)}`;
+    }
+
+    // yearly: show “$7.50/mo”
+    const perMonth = monthly * yearlyMultiplier;
+    return `$${perMonth.toFixed(2)}/mo`;
+  };
+
+  /* ----------  render  ---------- */
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 py-16 px-4">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-8xl mx-auto">
         {/* headline */}
         <header className="text-center mb-12">
           <h1 className="text-5xl font-extrabold bg-gradient-to-r from-[#4C1D95] to-[#2E1065] bg-clip-text text-transparent">
@@ -100,89 +109,111 @@ export function Pricing() {
           </p>
         </header>
 
-        {/* pricing grid */}
-        <div className="grid lg:grid-cols-4 md:grid-cols-2 gap-8">
-          {plans.map((plan) => (
-            <article
-              key={plan.name}
-              className={`relative flex flex-col bg-white rounded-2xl shadow-lg p-8 transition
-                hover:-translate-y-1 hover:shadow-2xl`}
+        {/* billing toggle */}
+        <div className="flex justify-center mb-12">
+          <div className="relative inline-flex rounded-full bg-white/90 shadow-lg">
+            {/* sliding pill */}
+            <span
+              className={`absolute inset-y-0 left-0 w-1/2 rounded-full bg-gradient-to-r from-[#4C1D95] to-[#2E1065] transition-transform duration-200 ease-out ${
+                cycle === "yearly" ? "translate-x-full" : ""
+              }`}
+            />
+            {/* Monthly */}
+            <button
+              onClick={() => setCycle("monthly")}
+              className={`relative z-10 h-12 w-40 text-base font-semibold rounded-full transition-colors duration-200 ${
+                cycle === "monthly" ? "text-white" : "text-[#4C1D95]"
+              }`}
             >
-              {/* badges */}
-              {plan.popular && (
-                <Badge text="Most Popular" icon={<Star className="h-4 w-4" />} />
-              )}
-              {plan.comingSoon && (
-                <Badge text="Coming Soon" icon={<Hourglass className="h-4 w-4" />} />
-              )}
-
-              {/* plan info */}
-              <div className="text-center mb-8">
-                <h3 className="text-2xl font-bold text-[#2E1065] mb-2">
-                  {plan.name}
-                </h3>
-
-                {plan.price ? (
-                  <div className="mb-4">
-                    <span className="text-4xl font-extrabold text-[#2E1065]">
-                      {plan.price}
-                    </span>
-                    <span className="text-[#4C1D95]">/{plan.period}</span>
-                    {plan.originalPrice && (
-                      <div className="text-sm text-[#4C1D95]/70 line-through mt-1">
-                        {plan.originalPrice}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="mb-4 h-10 flex items-center justify-center text-[#4C1D95]/60 italic">
-                    Launching Soon
-                  </div>
-                )}
-
-                <p className="text-[#4C1D95]/90">{plan.description}</p>
-              </div>
-
-              {/* features */}
-              <ul
-                className={`space-y-4 mb-8 flex-1 ${
-                  plan.comingSoon ? "blur-sm select-none pointer-events-none" : ""
+              Monthly
+            </button>
+            {/* Yearly */}
+            <button
+              onClick={() => setCycle("yearly")}
+              className={`relative z-10 h-12 w-40 text-base font-semibold rounded-full transition-colors duration-200 ${
+                cycle === "yearly" ? "text-white" : "text-[#4C1D95]"
+              }`}
+            >
+              Yearly{" "}
+              <span
+                className={`ml-1 font-medium ${
+                  cycle === "yearly" ? "text-emerald-200" : "text-[#2E1065]"
                 }`}
               >
-                {plan.features.map((f) => (
-                  <li key={f} className="flex items-start gap-3">
-                    <Check className="h-5 w-5 text-emerald-500 mt-0.5" />
-                    <span className="text-[#4C1D95]">{f}</span>
-                  </li>
-                ))}
-              </ul>
+                Save {yearlyDiscountPercent}%
+              </span>
+            </button>
+          </div>
+        </div>
 
-              {/* CTA */}
-              <button
-                onClick={plan.buttonAction}
-                disabled={plan.comingSoon}
-                className={`w-full py-4 rounded-xl font-semibold text-white active:scale-95 transition
-                  bg-gradient-to-r ${plan.gradient}
-                  ${plan.comingSoon ? "opacity-60 cursor-not-allowed" : "hover:shadow-lg"}`}
+        {/* pricing cards */}
+        <div className="flex flex-wrap justify-center gap-8">
+          {plans.map((plan) => {
+            const priceLabel = getPriceLabel(plan.monthly);
+
+            return (
+              <article
+                key={plan.name}
+                className="relative flex flex-col bg-white rounded-2xl shadow-lg p-8 transition hover:-translate-y-1 hover:shadow-2xl"
               >
-                {plan.buttonText}
-              </button>
-            </article>
-          ))}
+                {/* badges */}
+                {plan.popular && (
+                  <Badge text="Most Popular" icon={<Star className="h-4 w-4" />} />
+                )}
+                {plan.comingSoon && (
+                  <Badge text="Coming Soon" icon={<Hourglass className="h-4 w-4" />} />
+                )}
+
+                {/* plan header */}
+                <div className="text-center mb-8">
+                  <h3 className="text-2xl font-bold text-[#2E1065] mb-2">
+                    {plan.name}
+                  </h3>
+
+                  {plan.monthly !== null ? (
+                    <div className="mb-4">
+                      <span className="text-4xl font-extrabold text-[#2E1065]">
+                        {priceLabel}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="mb-4 h-10 flex items-center justify-center text-[#4C1D95]/60 italic">
+                      Launching Soon
+                    </div>
+                  )}
+
+                  <p className="text-[#4C1D95]/90">{plan.description}</p>
+                </div>
+
+                {/* features */}
+                <ul
+                  className={`space-y-4 mb-8 flex-1 ${
+                    plan.comingSoon ? "blur-sm select-none pointer-events-none" : ""
+                  }`}
+                >
+                  {plan.features.map((f) => (
+                    <li key={f} className="flex items-start gap-3">
+                      <Check className="h-5 w-5 text-emerald-500 mt-0.5" />
+                      <span className="text-[#4C1D95]">{f}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                {/* CTA */}
+                <button
+                  onClick={plan.buttonAction}
+                  disabled={plan.comingSoon}
+                  className={`w-full py-4 rounded-xl font-semibold text-white active:scale-95 transition bg-gradient-to-r ${plan.gradient} ${
+                    plan.comingSoon ? "opacity-60 cursor-not-allowed" : "hover:shadow-lg"
+                  }`}
+                >
+                  {plan.buttonText}
+                </button>
+              </article>
+            );
+          })}
         </div>
       </div>
-    </div>
-  );
-}
-
-/* badge component */
-function Badge({ text, icon }: { text: string; icon: React.ReactNode }) {
-  return (
-    <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-      <span className="flex items-center gap-1 bg-gradient-to-r from-[#4C1D95] to-[#2E1065] text-white px-4 py-1.5 rounded-full text-xs font-semibold">
-        {icon}
-        {text}
-      </span>
     </div>
   );
 }
