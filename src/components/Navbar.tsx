@@ -1,11 +1,13 @@
 // src/components/Navbar.tsx
 "use client";
-import { BookOpen } from "lucide-react";
+import { BookOpen, LogOut } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useState } from "react";
 
 export function Navbar() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
+  const [isLoggedIn, setIsLoggedIn] = useState(true); // For demo purposes, assume logged in
 
   /* helper to style active tab */
   const tab = (path: string) =>
@@ -14,6 +16,13 @@ export function Navbar() {
         ? "text-purple-600 bg-purple-50"
         : "text-gray-700 hover:text-purple-600"
     }`;
+
+  const handleLogout = () => {
+    // Simulate logout
+    alert("You have been logged out successfully!");
+    setIsLoggedIn(false);
+    navigate("/login");
+  };
 
   return (
     <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur shadow-lg">
@@ -30,7 +39,7 @@ export function Navbar() {
         </button>
 
         {/* nav links */}
-        <div className="flex items-center gap-8">
+        <div className="flex items-center gap-6">
           <button onClick={() => navigate("/")} className={tab("/")}>
             Home
           </button>
@@ -43,6 +52,17 @@ export function Navbar() {
           <button onClick={() => navigate("/pricing")} className={tab("/pricing")}>
             Pricing
           </button>
+          
+          {/* Logout button */}
+          {isLoggedIn && (
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
+            >
+              <LogOut className="h-4 w-4" />
+              Logout
+            </button>
+          )}
         </div>
       </div>
     </nav>
