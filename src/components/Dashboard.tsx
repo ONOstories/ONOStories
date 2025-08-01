@@ -9,7 +9,6 @@ import {
   Sparkles,
 } from "lucide-react";
 import { mockGeneratedStories } from "../lib/mockData";
-import { useNavigate } from "react-router-dom";
 
 /* ---------- type definitions ---------- */
 interface Story {

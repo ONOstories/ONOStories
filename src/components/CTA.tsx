@@ -1,5 +1,4 @@
 "use client";
-import { Mail, Facebook, Instagram, Twitter } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 /* Pastel CTA without stars ─ matches the WhatMakesSpecial palette */
