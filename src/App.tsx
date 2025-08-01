@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { Navbar } from './components/Navbar';
-import { Home } from './components/Home';
-import { Pricing } from './components/Pricing';
+import { Home } from './components/pages/Home';
+import { Pricing } from './components/pages/Pricing';
 import { StoryLibrary } from './components/StoryLibrary';
 import { Dashboard } from './components/Dashboard';
 
