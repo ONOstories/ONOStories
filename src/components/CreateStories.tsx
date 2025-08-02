@@ -20,7 +20,31 @@ interface Story {
 }
 
 /* ---------- component ---------- */
+import { useAuth } from "../contexts/AuthProvider";
+import { useNavigate, useLocation } from "react-router-dom";
+
 export function CreateStories() {
+  const { profile } = useAuth();
+  const navigate = useNavigate();
+
+  // If normal user, redirect to pricing and animate pro plan
+  if (profile?.role !== "prouser") {
+    navigate("/pricing", { state: { animatePro: true } });
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="bg-white p-8 rounded-xl shadow-lg text-center">
+          <h2 className="text-2xl font-bold mb-4">Upgrade Required</h2>
+          <p className="text-gray-600 mb-4">You need a Pro plan to access Create Stories.</p>
+          <button
+            className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700"
+            onClick={() => navigate("/pricing", { state: { animatePro: true } })}
+          >
+            View Pro Plans
+          </button>
+        </div>
+      </div>
+    );
+  }
   const [activeTab, setActiveTab] =
     useState<"create" | "history" | "photos">("create");
   const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([]);

@@ -1,50 +1,61 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { BookOpen, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { supabase } from '../../lib/supabaseClient';
+import { useAuth } from '../../contexts/AuthProvider';
+import { Label } from '../ui/label';
+import { Input } from '../ui/input';
 
 export function Login() {
-  const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  });
+  const [formData, setFormData] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { user, loading: authLoading } = useAuth();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
-    // Simulate authentication delay
-    setTimeout(() => {
-      // Any input is treated as valid for this UI prototype
-      alert('Login successful! Welcome to ONOSTORIES!');
-      
-      // Reset form
-      setFormData({ email: '', password: '' });
-      
-      // Redirect to home/createstories
-      navigate('/createstories');
+    setError(null);
+    console.log('[Login] Attempting login', formData);
+    const { error: supaError } = await supabase.auth.signInWithPassword({
+      email: formData.email,
+      password: formData.password,
+    });
+    if (supaError) {
+      console.error('[Login] Login error', supaError);
+      setError(supaError.message);
       setIsLoading(false);
-    }, 1000);
+    } else {
+      console.log('[Login] Login successful, waiting for AuthProvider update');
+    }
+    // On success, the AuthProvider's listener will handle everything else.
   };
 
-  const handleReset = () => {
-    setFormData({ email: '', password: '' });
-  };
+  // 1. If the AuthProvider is still checking the user's status, show a loading screen.
+  React.useEffect(() => {
+    console.log('[Login] useAuth state', { user, authLoading });
+  }, [user, authLoading]);
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p>Loading...</p>
+      </div>
+    );
+  }
+  if (user) {
+    return <Navigate to="/" replace />;
+  }
 
+  // 3. If the check is complete and there is no user, show the login form.
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 flex items-center justify-center px-4">
       <div className="max-w-md w-full">
-        {/* Logo and Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
             <BookOpen className="h-12 w-12 text-purple-600" />
@@ -52,24 +63,18 @@ export function Login() {
           <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
             ONOSTORIES
           </h1>
-          <p className="text-gray-600 mt-2">Welcome back! Sign in to continue creating magical stories.</p>
+          <p className="text-gray-600 mt-2">Welcome back! Sign in to continue.</p>
         </div>
-
-        {/* Login Form */}
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Sign In</h2>
-          
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Email Field */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address
-              </label>
+              <Label htmlFor="email">Email Address</Label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Mail className="h-5 w-5 text-gray-400" />
                 </div>
-                <input
+                <Input
                   type="email"
                   id="email"
                   name="email"
@@ -81,24 +86,19 @@ export function Login() {
                 />
               </div>
             </div>
-
-            {/* Password Field */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                Password
-              </label>
+              <Label htmlFor="password">Password</Label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Lock className="h-5 w-5 text-gray-400" />
                 </div>
-                <input
+                <Input
                   type={showPassword ? 'text' : 'password'}
                   id="password"
                   name="password"
                   value={formData.password}
                   onChange={handleInputChange}
                   required
-                  minLength={6}
                   placeholder="Enter your password"
                   className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
                 />
@@ -115,8 +115,7 @@ export function Login() {
                 </button>
               </div>
             </div>
-
-            {/* Form Buttons */}
+            {error && <p className="text-sm text-center text-red-600">{error}</p>}
             <div className="flex space-x-4">
               <button
                 type="submit"
@@ -125,36 +124,16 @@ export function Login() {
               >
                 {isLoading ? 'Signing In...' : 'Sign In'}
               </button>
-              
-              <button
-                type="button"
-                onClick={handleReset}
-                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
-              >
-                Reset
-              </button>
             </div>
           </form>
-
-          {/* Navigation to Signup */}
           <div className="mt-6 text-center">
             <p className="text-gray-600">
               Don't have an account?{' '}
-              <Link 
-                to="/signup" 
-                className="text-purple-600 hover:text-purple-700 font-semibold underline"
-              >
+              <Link to="/signup" className="text-purple-600 hover:text-purple-700 font-semibold underline">
                 Sign up here
               </Link>
             </p>
           </div>
-        </div>
-
-        {/* Footer */}
-        <div className="text-center mt-8">
-          <p className="text-sm text-gray-500">
-            © 2024 ONOSTORIES. Creating magical stories for children.
-          </p>
         </div>
       </div>
     </div>

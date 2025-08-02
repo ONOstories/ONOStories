@@ -1,29 +1,36 @@
-// src/App.tsx
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { Navbar } from "./components/Navbar";
 import { Home } from "./components/pages/Home";
 import { Login } from "./components/pages/Login";
 import { Signup } from "./components/pages/Signup";
 import { Pricing } from "./components/pages/Pricing";
-import { StoryLibrary } from "./components/StoryLibrary";
 import { CreateStories } from "./components/CreateStories";
+import { StoryLibrary } from "./components/StoryLibrary";
+import Navbar from "./components/Navbar";
+import { Footer } from "./components/Footer";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 
-export default function App() {
+function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50">
-        <Navbar />
-
+      <Navbar />
+      <main>
         <Routes>
-          <Route path="/"          element={<Home />} />
-          <Route path="/login"     element={<Login />} />
-          <Route path="/signup"    element={<Signup />} />
-          <Route path="/pricing"   element={<Pricing />} />
-          <Route path="/library"   element={<StoryLibrary />} />
-          <Route path="/createstories" element={<CreateStories />} />
-          <Route path="*"          element={<Home />} />
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/story-library" element={<StoryLibrary />} />
+          
+          {/* Protected Route for Create Stories */}
+          <Route element={<ProtectedRoute allowedRoles={['prouser']} />}>
+            <Route path="/create-stories" element={<CreateStories />} />
+          </Route>
+
         </Routes>
-      </div>
+      </main>
+      <Footer />
     </BrowserRouter>
   );
 }
+
+export default App;

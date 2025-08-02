@@ -116,7 +116,7 @@ export function StoryLibrary() {
                   
                   <div className="flex space-x-2">
                     <button
-                      onClick={() => navigate("/createstories")}
+                      onClick={() => navigate("/create-stories")}
                       className="flex-1 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
                     >
                       Create Story

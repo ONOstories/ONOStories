@@ -18,6 +18,18 @@ function Badge({ text, icon }: { text: string; icon: React.ReactNode }) {
 /* ----------  Main component  ---------- */
 export function Pricing() {
   const navigate = useNavigate();
+  // Animated pro plan message if redirected from CreateStories
+  const { state } = (typeof window !== "undefined" && window.history && window.history.state && window.history.state.usr) ? window.history.state.usr : {};
+  // If using react-router-dom v6, use useLocation and location.state
+  // const location = useLocation();
+  // const state = location.state;
+  const [showProAnim, setShowProAnim] = useState(false);
+  React.useEffect(() => {
+    if (state && state.animatePro) {
+      setShowProAnim(true);
+      setTimeout(() => setShowProAnim(false), 3000);
+    }
+  }, [state]);
 
   /* billing-cycle state — "monthly" | "yearly"  */
   const [cycle, setCycle] = useState<"monthly" | "yearly">("monthly");
@@ -98,6 +110,15 @@ export function Pricing() {
   /* ----------  render  ---------- */
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 py-16 px-4">
+      {showProAnim && (
+        <div className="fixed top-8 left-1/2 -translate-x-1/2 z-50">
+          <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-2xl shadow-xl flex items-center space-x-4 animate-bounce">
+            <span role="img" aria-label="lock" className="text-2xl">🔒</span>
+            <span className="font-bold text-lg">Unlock Pro Features to Create Stories!</span>
+            <span className="bg-white text-pink-600 font-bold px-3 py-1 rounded-full animate-pulse">Pro Plan</span>
+          </div>
+        </div>
+      )}
       <div className="max-w-8xl mx-auto">
         {/* headline */}
         <header className="text-center mb-12">

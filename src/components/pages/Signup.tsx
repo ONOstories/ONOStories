@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { BookOpen, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
+import { supabase } from '../../lib/supabaseClient';
+import { Label } from '../ui/label';
+import { Input } from '../ui/input';
 
 export function Signup() {
   const navigate = useNavigate();
@@ -13,6 +16,7 @@ export function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -25,26 +29,33 @@ export function Signup() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
-    // Basic password confirmation check for UI
+    setError(null);
+    console.log('[Signup] Attempting signup', formData);
     if (formData.password !== formData.confirmPassword) {
       alert('Passwords do not match!');
       setIsLoading(false);
       return;
     }
-
-    // Simulate account creation delay
-    setTimeout(() => {
-      // Any input is treated as valid for this UI prototype
-      alert('Account created successfully! Welcome to ONOSTORIES!');
-      
-      // Reset form
-      setFormData({ fullName: '', email: '', password: '', confirmPassword: '' });
-      
-      // Redirect to home/createstories
-      navigate('/createstories');
+    const { error: supaError } = await supabase.auth.signUp({
+      email: formData.email,
+      password: formData.password,
+      options: {
+        data: {
+          name: formData.fullName,
+        },
+      },
+    });
+    if (supaError) {
+      console.error('[Signup] Signup error', supaError);
+      setError(supaError.message);
       setIsLoading(false);
-    }, 1000);
+      return;
+    }
+    console.log('[Signup] Signup successful, navigating to login');
+    setFormData({ fullName: '', email: '', password: '', confirmPassword: '' });
+    alert('Signup successful! Please check your email to confirm your account.');
+    navigate('/login');
+    setIsLoading(false);
   };
 
   const handleReset = () => {
@@ -72,14 +83,12 @@ export function Signup() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Full Name Field */}
             <div>
-              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">
-                Full Name
-              </label>
+              <Label htmlFor="fullName">Full Name</Label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <User className="h-5 w-5 text-gray-400" />
                 </div>
-                <input
+                <Input
                   type="text"
                   id="fullName"
                   name="fullName"
@@ -95,14 +104,12 @@ export function Signup() {
 
             {/* Email Field */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address
-              </label>
+              <Label htmlFor="email">Email Address</Label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Mail className="h-5 w-5 text-gray-400" />
                 </div>
-                <input
+                <Input
                   type="email"
                   id="email"
                   name="email"
@@ -117,14 +124,12 @@ export function Signup() {
 
             {/* Password Field */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                Password
-              </label>
+              <Label htmlFor="password">Password</Label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Lock className="h-5 w-5 text-gray-400" />
                 </div>
-                <input
+                <Input
                   type={showPassword ? 'text' : 'password'}
                   id="password"
                   name="password"
@@ -151,14 +156,12 @@ export function Signup() {
 
             {/* Confirm Password Field */}
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                Confirm Password
-              </label>
+              <Label htmlFor="confirmPassword">Confirm Password</Label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Lock className="h-5 w-5 text-gray-400" />
                 </div>
-                <input
+                <Input
                   type={showConfirmPassword ? 'text' : 'password'}
                   id="confirmPassword"
                   name="confirmPassword"
@@ -183,6 +186,9 @@ export function Signup() {
               </div>
             </div>
 
+            {/* Error Message */}
+            {error && <p className="text-sm text-red-600">{error}</p>}
+
             {/* Form Buttons */}
             <div className="flex space-x-4">
               <button
@@ -192,7 +198,6 @@ export function Signup() {
               >
                 {isLoading ? 'Creating Account...' : 'Create Account'}
               </button>
-              
               <button
                 type="button"
                 onClick={handleReset}
