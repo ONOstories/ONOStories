@@ -68,6 +68,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, []);
 
   const logout = async () => {
+    console.log("Logging out user...");
     await supabase.auth.signOut();
     // The onAuthStateChange listener will automatically update the state.
   };
