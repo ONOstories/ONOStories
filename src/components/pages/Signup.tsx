@@ -36,15 +36,17 @@ export function Signup() {
       setIsLoading(false);
       return;
     }
-    const { error: supaError } = await supabase.auth.signUp({
-      email: formData.email,
-      password: formData.password,
-      options: {
-        data: {
-          name: formData.fullName,
-        },
-      },
-    });
+const { error: supaError } = await supabase.auth.signUp({
+  email: formData.email,
+  password: formData.password,
+  options: {
+    data: {                    // 👈 you already have this
+      name: formData.fullName,
+    },
+    emailRedirectTo: `${window.location.origin}/email-confirmed`, // 👈 NEW
+  },
+});
+
     if (supaError) {
       console.error('[Signup] Signup error', supaError);
       setError(supaError.message);
