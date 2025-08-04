@@ -1,9 +1,16 @@
-"use client";
+
 import React, { useState } from "react";
 import { Check, Star, Hourglass } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthProvider";
+import { supabase } from "../../lib/supabaseClient";
 
-/* ----------  Badge (unchanged)  ---------- */
+// Define the plan details
+const plansData = {
+  monthly: { name: "Pro Monthly", price: 399, currency: "INR" },
+  annual: { name: "Pro Annual", price: 4214, currency: "INR" },
+};
+
 function Badge({ text, icon }: { text: string; icon: React.ReactNode }) {
   return (
     <div className="absolute -top-4 left-1/2 -translate-x-1/2">
@@ -15,99 +22,72 @@ function Badge({ text, icon }: { text: string; icon: React.ReactNode }) {
   );
 }
 
-/* ----------  Main component  ---------- */
 export function Pricing() {
   const navigate = useNavigate();
-  // Animated pro plan message if redirected from CreateStories
-  const { state } = (typeof window !== "undefined" && window.history && window.history.state && window.history.state.usr) ? window.history.state.usr : {};
-  // If using react-router-dom v6, use useLocation and location.state
-  // const location = useLocation();
-  // const state = location.state;
-  const [showProAnim, setShowProAnim] = useState(false);
+  const location = useLocation();
+  const { user, profile } = useAuth();
+  const [cycle, setCycle] = useState<"monthly" | "annual">("annual");
+  const [isLoading, setIsLoading] = useState<"monthly" | "annual" | null>(null);
+
+  // Animation for redirects
+  const [showProAnim, setShowProAnim] = useState(location.state?.animatePro || false);
   React.useEffect(() => {
-    if (state && state.animatePro) {
-      setShowProAnim(true);
-      setTimeout(() => setShowProAnim(false), 3000);
+    if (showProAnim) {
+      const timer = setTimeout(() => setShowProAnim(false), 3000);
+      return () => clearTimeout(timer);
     }
-  }, [state]);
+  }, [showProAnim]);
 
-  /* billing-cycle state — "monthly" | "yearly"  */
-  const [cycle, setCycle] = useState<"monthly" | "yearly">("monthly");
-
-  /* base plan data (store monthly price only) */
-  const plans = [
-    {
-      name: "Free",
-      monthly: 0,
-      description: "Perfect for trying out ONOSTORIES",
-      features: [
-        "4–5 pre-made demo stories",
-        "View stories online only",
-        "Sample different story types",
-        "Basic story experience",
-      ],
-      buttonText: "Get Started Free",
-      buttonAction: () => navigate("library"),
-      gradient: "from-gray-400 to-gray-500",
-    },
-    {
-      name: "Pro",
-      monthly: 9.99,
-      description: "Full access to personalized storytelling",
-      features: [
-        "Upload child photos (4-5 images)",
-        "Unlimited personalized stories",
-        "3 main genres + sub-genres",
-        "Custom genre option",
-        "Download stories as PDF",
-        "Story history & regeneration",
-        "Priority customer support",
-      ],
-      buttonText: "Start Pro",
-      buttonAction: () => alert("Redirect to Pro checkout"),
-      popular: true,
-      gradient: "from-[#4C1D95] to-[#2E1065]",
-    },
-    {
-      name: "Premium (Coming Soon)",
-      monthly: null, // hide price until launch
-      description: "Our most powerful plan is almost here!",
-      features: [
-        "Unlimited personalized stories",
-        "Exclusive premium themes",
-        "Early-access story drops",
-        "Priority AI processing",
-        "Family sharing perks",
-        "Holiday mega-collections",
-        "Save 25 % compared to monthly",
-        "Extended story library",
-      ],
-      buttonText: "Launching Soon",
-      buttonAction: () => alert("Premium plan launching soon!"),
-      comingSoon: true,
-      gradient: "from-[#2E1065] to-[#4C1D95]",
-    },
-  ];
-
-  /* yearly discount constants */
-  const yearlyMultiplier = 0.7507;   // = 24.93 % off
-  const yearlyDiscountPercent = 25;  // rounded label
-
-  /* helper: derive yearly total & monthly-equiv labels */
-  const getPriceLabel = (monthly: number | null) => {
-    if (monthly === null) return "";
-
-    if (cycle === "monthly") {
-      // show single monthly amount → “$9.99”
-      return `$${monthly.toFixed(2)}`;
+  // Main payment handler
+  const handlePayment = async (planId: "monthly" | "annual") => {
+    if (!user) {
+      navigate("/login");
+      return;
     }
+    setIsLoading(planId);
 
-    // yearly: show “$7.50/mo”
-    const perMonth = monthly * yearlyMultiplier;
-    return `$${perMonth.toFixed(2)}/mo`;
+    try {
+      // 1. Create a Razorpay Order by calling our secure Supabase Function
+      const { data: order, error: orderError } = await supabase.functions.invoke("create-razorpay-order", {
+        body: { planId, userId: user.id },
+      });
+
+      if (orderError) throw new Error(orderError.message);
+      if (!order) throw new Error("Failed to create order.");
+
+      // 2. Open the Razorpay Checkout Modal
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount: order.amount,
+        currency: order.currency,
+        name: "ONOSTORIES Pro",
+        description: `Purchase ${plansData[planId].name} Plan`,
+        order_id: order.id,
+        handler: function () {
+            // This function is called after a successful payment.
+            // The webhook will handle the database update.
+            alert("Payment successful! Your account will be updated shortly.");
+            navigate("/");
+        },
+        prefill: {
+          name: profile?.name || "",
+          email: user.email,
+        },
+        theme: {
+          color: "#4C1D95",
+        },
+      };
+      const rzp = new (window as any).Razorpay(options);
+      rzp.open();
+
+    } catch (error: any) {
+      console.error("Payment failed:", error);
+      alert(`Payment failed: ${error.message}`);
+    } finally {
+      setIsLoading(null);
+    }
   };
 
-  /* ----------  render  ---------- */
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 py-16 px-4">
       {showProAnim && (
@@ -136,7 +116,7 @@ export function Pricing() {
             {/* sliding pill */}
             <span
               className={`absolute inset-y-0 left-0 w-1/2 rounded-full bg-gradient-to-r from-[#4C1D95] to-[#2E1065] transition-transform duration-200 ease-out ${
-                cycle === "yearly" ? "translate-x-full" : ""
+                cycle === "annual" ? "translate-x-full" : ""
               }`}
             />
             {/* Monthly */}
@@ -148,20 +128,20 @@ export function Pricing() {
             >
               Monthly
             </button>
-            {/* Yearly */}
+            {/* Annual */}
             <button
-              onClick={() => setCycle("yearly")}
+              onClick={() => setCycle("annual")}
               className={`relative z-10 h-12 w-40 text-base font-semibold rounded-full transition-colors duration-200 ${
-                cycle === "yearly" ? "text-white" : "text-[#4C1D95]"
+                cycle === "annual" ? "text-white" : "text-[#4C1D95]"
               }`}
             >
-              Yearly{" "}
+              Annual
               <span
                 className={`ml-1 font-medium ${
-                  cycle === "yearly" ? "text-emerald-200" : "text-[#2E1065]"
+                  cycle === "annual" ? "text-emerald-200" : "text-[#2E1065]"
                 }`}
               >
-                Save {yearlyDiscountPercent}%
+                Save 12%
               </span>
             </button>
           </div>
@@ -169,70 +149,85 @@ export function Pricing() {
 
         {/* pricing cards */}
         <div className="flex flex-wrap justify-center gap-8">
-          {plans.map((plan) => {
-            const priceLabel = getPriceLabel(plan.monthly);
+          {/* --- FREE PLAN --- */}
+          <article className="relative flex flex-col w-full max-w-sm bg-white rounded-2xl shadow-lg p-8">
+            <div className="text-center mb-8">
+              <h3 className="text-2xl font-bold text-[#2E1065] mb-2">Free</h3>
+              <div className="mb-4">
+                <span className="text-4xl font-extrabold text-[#2E1065]">₹0</span>
+                <span className="text-lg text-gray-500">/mo</span>
+              </div>
+              <p className="text-[#4C1D95]/90">Perfect for trying out ONOSTORIES</p>
+            </div>
+            <ul className="space-y-4 mb-8 flex-1">
+              <li className="flex items-start gap-3"><Check className="h-5 w-5 text-emerald-500 mt-0.5" /><span className="text-[#4C1D95]">4–5 pre-made demo stories</span></li>
+              <li className="flex items-start gap-3"><Check className="h-5 w-5 text-emerald-500 mt-0.5" /><span className="text-[#4C1D95]">View stories online only</span></li>
+              <li className="flex items-start gap-3"><Check className="h-5 w-5 text-emerald-500 mt-0.5" /><span className="text-[#4C1D95]">Sample different story types</span></li>
+              <li className="flex items-start gap-3"><Check className="h-5 w-5 text-emerald-500 mt-0.5" /><span className="text-[#4C1D95]">Basic story experience</span></li>
+            </ul>
+            <button
+              onClick={() => navigate("/signup")}
+              className="w-full py-3 mt-8 rounded-xl font-semibold text-white bg-gray-500 hover:bg-gray-600 transition">
+              Get Started Free
+            </button>
+          </article>
 
-            return (
-              <article
-                key={plan.name}
-                className="relative flex flex-col bg-white rounded-2xl shadow-lg p-8 transition hover:-translate-y-1 hover:shadow-2xl"
-              >
-                {/* badges */}
-                {plan.popular && (
-                  <Badge text="Most Popular" icon={<Star className="h-4 w-4" />} />
-                )}
-                {plan.comingSoon && (
-                  <Badge text="Coming Soon" icon={<Hourglass className="h-4 w-4" />} />
-                )}
+          {/* --- PRO PLAN --- */}
+          <article className="relative flex flex-col w-full max-w-sm bg-white rounded-2xl shadow-xl p-8 border-2 border-purple-500">
+            <Badge text="Most Popular" icon={<Star className="h-4 w-4" />} />
+            <div className="text-center mb-8">
+              <h3 className="text-2xl font-bold text-[#2E1065] mb-2">Pro</h3>
+              <div className="mb-4">
+                <span className="text-4xl font-extrabold text-[#2E1065]">
+                  ₹{cycle === 'annual' ? Math.round(plansData.annual.price / 12) : plansData.monthly.price}
+                </span>
+                <span className="text-lg text-gray-500">/mo</span>
+              </div>
+              <p className="text-[#4C1D95]/90">Full access to personalized storytelling</p>
+            </div>
+            <ul className="space-y-4 mb-8 flex-1">
+              <li className="flex items-start gap-3"><Check className="h-5 w-5 text-emerald-500 mt-0.5" /><span className="text-[#4C1D95]">Upload child photos (4-5 images)</span></li>
+              <li className="flex items-start gap-3"><Check className="h-5 w-5 text-emerald-500 mt-0.5" /><span className="text-[#4C1D95]">Unlimited personalized stories</span></li>
+              <li className="flex items-start gap-3"><Check className="h-5 w-5 text-emerald-500 mt-0.5" /><span className="text-[#4C1D95]">3 main genres + sub-genres</span></li>
+              <li className="flex items-start gap-3"><Check className="h-5 w-5 text-emerald-500 mt-0.5" /><span className="text-[#4C1D95]">Custom genre option</span></li>
+              <li className="flex items-start gap-3"><Check className="h-5 w-5 text-emerald-500 mt-0.5" /><span className="text-[#4C1D95]">Download stories as PDF</span></li>
+              <li className="flex items-start gap-3"><Check className="h-5 w-5 text-emerald-500 mt-0.5" /><span className="text-[#4C1D95]">Story history & regeneration</span></li>
+              <li className="flex items-start gap-3"><Check className="h-5 w-5 text-emerald-500 mt-0.5" /><span className="text-[#4C1D95]">Priority customer support</span></li>
+            </ul>
+            <button
+              onClick={() => handlePayment(cycle)}
+              disabled={!!isLoading}
+              className="w-full py-4 mt-8 rounded-xl font-semibold text-white bg-gradient-to-r from-[#4C1D95] to-[#2E1065] hover:shadow-lg disabled:opacity-50 transition">
+              {isLoading === cycle ? "Processing..." : `Start Pro ${cycle === 'monthly' ? 'Monthly' : 'Annually'}`}
+            </button>
+          </article>
 
-                {/* plan header */}
-                <div className="text-center mb-8">
-                  <h3 className="text-2xl font-bold text-[#2E1065] mb-2">
-                    {plan.name}
-                  </h3>
-
-                  {plan.monthly !== null ? (
-                    <div className="mb-4">
-                      <span className="text-4xl font-extrabold text-[#2E1065]">
-                        {priceLabel}
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="mb-4 h-10 flex items-center justify-center text-[#4C1D95]/60 italic">
-                      Launching Soon
-                    </div>
-                  )}
-
-                  <p className="text-[#4C1D95]/90">{plan.description}</p>
-                </div>
-
-                {/* features */}
-                <ul
-                  className={`space-y-4 mb-8 flex-1 ${
-                    plan.comingSoon ? "blur-sm select-none pointer-events-none" : ""
-                  }`}
-                >
-                  {plan.features.map((f) => (
-                    <li key={f} className="flex items-start gap-3">
-                      <Check className="h-5 w-5 text-emerald-500 mt-0.5" />
-                      <span className="text-[#4C1D95]">{f}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                {/* CTA */}
-                <button
-                  onClick={plan.buttonAction}
-                  disabled={plan.comingSoon}
-                  className={`w-full py-4 rounded-xl font-semibold text-white active:scale-95 transition bg-gradient-to-r ${plan.gradient} ${
-                    plan.comingSoon ? "opacity-60 cursor-not-allowed" : "hover:shadow-lg"
-                  }`}
-                >
-                  {plan.buttonText}
-                </button>
-              </article>
-            );
-          })}
+          {/* --- PREMIUM PLAN (Coming Soon) --- */}
+          <article className="relative flex flex-col w-full max-w-sm bg-white rounded-2xl shadow-lg p-8 opacity-60 cursor-not-allowed">
+            <Badge text="Coming Soon" icon={<Hourglass className="h-4 w-4" />} />
+            <div className="text-center mb-8">
+              <h3 className="text-2xl font-bold text-[#2E1065] mb-2">Premium (Coming Soon)</h3>
+              <div className="mb-4 h-10 flex items-center justify-center text-[#4C1D95]/60 italic">
+                Launching Soon
+              </div>
+              <p className="text-[#4C1D95]/90">Our most powerful plan is almost here!</p>
+            </div>
+            <ul className="space-y-4 mb-8 flex-1 blur-sm select-none pointer-events-none">
+              <li className="flex items-start gap-3"><Check className="h-5 w-5 text-emerald-500 mt-0.5" /><span className="text-[#4C1D95]">Unlimited personalized stories</span></li>
+              <li className="flex items-start gap-3"><Check className="h-5 w-5 text-emerald-500 mt-0.5" /><span className="text-[#4C1D95]">Exclusive premium themes</span></li>
+              <li className="flex items-start gap-3"><Check className="h-5 w-5 text-emerald-500 mt-0.5" /><span className="text-[#4C1D95]">Early-access story drops</span></li>
+              <li className="flex items-start gap-3"><Check className="h-5 w-5 text-emerald-500 mt-0.5" /><span className="text-[#4C1D95]">Priority AI processing</span></li>
+              <li className="flex items-start gap-3"><Check className="h-5 w-5 text-emerald-500 mt-0.5" /><span className="text-[#4C1D95]">Family sharing perks</span></li>
+              <li className="flex items-start gap-3"><Check className="h-5 w-5 text-emerald-500 mt-0.5" /><span className="text-[#4C1D95]">Holiday mega-collections</span></li>
+              <li className="flex items-start gap-3"><Check className="h-5 w-5 text-emerald-500 mt-0.5" /><span className="text-[#4C1D95]">Save 25 % compared to monthly</span></li>
+              <li className="flex items-start gap-3"><Check className="h-5 w-5 text-emerald-500 mt-0.5" /><span className="text-[#4C1D95]">Extended story library</span></li>
+            </ul>
+            <button
+              disabled
+              className="w-full py-4 mt-8 rounded-xl font-semibold text-white bg-gradient-to-r from-[#2E1065] to-[#4C1D95] opacity-60 cursor-not-allowed">
+              Launching Soon
+            </button>
+          </article>
         </div>
       </div>
     </div>
