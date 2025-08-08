@@ -45,10 +45,18 @@ serve(async (req) => {
       const plan = plans[planId as keyof typeof plans];
       if (!plan) throw new Error("Invalid plan details in payment");
 
+      // This is the new, corrected code
       const supabaseAdmin = createClient(
-        Deno.env.get("SUPABASE_URL")!,
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-      );
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      {
+      auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+      },
+    } 
+  )
 
       const expiryDate = new Date();
       expiryDate.setDate(expiryDate.getDate() + plan.duration_days);
