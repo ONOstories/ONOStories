@@ -15,7 +15,6 @@ serve(async (req) => {
 
     if (!signature) throw new Error("Signature missing from header");
 
-    // --- Using Web Crypto API (built-in, no import needed) ---
     const encoder = new TextEncoder();
     const key = await crypto.subtle.importKey(
       "raw",
@@ -28,7 +27,6 @@ serve(async (req) => {
     const expectedSignature = Array.from(new Uint8Array(signatureBuffer))
         .map((b) => b.toString(16).padStart(2, "0"))
         .join("");
-    // --- End of Web Crypto API logic ---
 
     if (expectedSignature !== signature) {
       throw new Error("Invalid webhook signature");
@@ -45,18 +43,18 @@ serve(async (req) => {
       const plan = plans[planId as keyof typeof plans];
       if (!plan) throw new Error("Invalid plan details in payment");
 
-      // This is the new, corrected code
+      // UPDATED: Use the new secret names
       const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      {
-      auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-      detectSessionInUrl: false,
-      },
-    } 
-  )
+          Deno.env.get('ONO_SUPABASE_URL') ?? '',
+          Deno.env.get('ONO_SERVICE_ROLE_KEY') ?? '',
+          {
+            auth: {
+              persistSession: false,
+              autoRefreshToken: false,
+              detectSessionInUrl: false,
+            },
+          }
+      );
 
       const expiryDate = new Date();
       expiryDate.setDate(expiryDate.getDate() + plan.duration_days);
