@@ -1,456 +1,281 @@
 import React, { useState } from "react";
+import { supabase } from "../lib/supabaseClient";
+import { useAuth } from "../contexts/AuthProvider";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import {
   Upload,
   BookOpen,
-  Download,
   Trash2,
   Plus,
-  Image as ImageIcon,
+  ImageIcon,
   Sparkles,
+  Loader2,
 } from "lucide-react";
-import { mockGeneratedStories } from "../lib/mockData";
 
-/* ---------- type definitions ---------- */
-interface Story {
-  id: number;
-  title: string;
-  genre: string;
-  createdAt: string;
-  thumbnail: string;
-}
-
-/* ---------- component ---------- */
-import { useAuth } from "../contexts/AuthProvider";
-import { useNavigate, useLocation } from "react-router-dom";
-
+// The component for creating new stories, now fully integrated with Supabase.
 export function CreateStories() {
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
+  const [uploadedPhoto, setUploadedPhoto] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
-  // If normal user, redirect to pricing and animate pro plan
+  // Expanded form state to include all required fields for the 'stories' table
+  const [storyForm, setStoryForm] = useState({
+    title: "",
+    childName: "",
+    age: "",
+    gender: "",
+    genre: "",
+    short_description: "",
+  });
+
+  // Redirect non-pro users to the pricing page
   if (profile?.role !== "prouser") {
     navigate("/pricing", { state: { animatePro: true } });
+    // Render a fallback while redirecting
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="bg-white p-8 rounded-xl shadow-lg text-center">
-          <h2 className="text-2xl font-bold mb-4">Upgrade Required</h2>
-          <p className="text-gray-600 mb-4">You need a Pro plan to access Create Stories.</p>
-          <button
-            className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700"
-            onClick={() => navigate("/pricing", { state: { animatePro: true } })}
-          >
-            View Pro Plans
-          </button>
-        </div>
+        Redirecting to pricing...
       </div>
     );
   }
-  const [activeTab, setActiveTab] =
-    useState<"create" | "history" | "photos">("create");
-  const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([]);
-  const [storyForm, setStoryForm] = useState({
-    childName: "",
-    genre: "",
-    subGenre: "",
-    customGenre: "",
-  });
 
-  /* --- genre presets --- */
-  const genres: Record<string, string[]> = {
-    Educational: [
-      "Science Adventures",
-      "History Explorers",
-      "Math Magic",
-      "Geography Quest",
-      "Custom Educational",
-    ],
-    "Bedtime Stories": [
-      "Peaceful Dreams",
-      "Sleepy Animals",
-      "Night Sky Adventures",
-      "Cozy Tales",
-      "Custom Bedtime",
-    ],
-    "Moral Stories": [
-      "Kindness Chronicles",
-      "Honesty Heroes",
-      "Sharing Stories",
-      "Courage Tales",
-      "Custom Moral",
-    ],
+  // Handles the selection of a photo file
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadedPhoto(file);
+    setPhotoPreview(URL.createObjectURL(file));
   };
 
-  /* --- story history (localStorage + mock) --- */
-  const [generatedStories, setGeneratedStories] = useState<Story[]>(() => {
-    const saved = localStorage.getItem("onostories_generated_stories");
-    return saved
-      ? (JSON.parse(saved) as Story[])
-      : mockGeneratedStories.map(
-          (story): Story => ({
-            id: parseInt(story.id, 10),
-            title: story.title,
-            genre: story.genre,
-            createdAt: story.created_at.split("T")[0],
-            thumbnail:
-              "https://images.pexels.com/photos/220201/pexels-photo-220201.jpeg?auto=compress&cs=tinysrgb&w=400",
-          })
-        );
-  });
-
-  /* ---------- handlers ---------- */
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-
-    const newPhotos = Array.from(files)
-      .slice(0, 5 - uploadedPhotos.length)
-      .map((file) => URL.createObjectURL(file));
-
-    setUploadedPhotos((prev) => [...prev, ...newPhotos]);
+  // Removes the selected photo
+  const removePhoto = () => {
+    setUploadedPhoto(null);
+    if (photoPreview) {
+      URL.revokeObjectURL(photoPreview);
+      setPhotoPreview(null);
+    }
   };
 
-  const removePhoto = (index: number) =>
-    setUploadedPhotos((prev) => prev.filter((_, i) => i !== index));
-
-  const handleCreateStory = () => {
-    if (!storyForm.childName || !storyForm.genre || uploadedPhotos.length === 0) {
-      alert("Please fill in all required fields and upload at least one photo.");
+  // Main function to handle story creation
+  const handleCreateStory = async () => {
+    // Basic form validation
+    if (!storyForm.title || !storyForm.childName || !storyForm.age || !storyForm.gender || !storyForm.genre || !storyForm.short_description) {
+      toast.error("Please fill in all the required fields.");
       return;
     }
+    if (!uploadedPhoto) {
+      toast.error("Please upload a photo of the child.");
+      return;
+    }
+    if (!user) {
+        toast.error("You must be logged in to create a story.");
+        return;
+    }
 
-    const newStory: Story = {
-      id: Date.now(),
-      title: `${storyForm.childName}'s ${
-        storyForm.subGenre || storyForm.genre
-      } Adventure`,
-      genre: storyForm.genre,
-      createdAt: new Date().toISOString().split("T")[0],
-      thumbnail:
-        "https://images.pexels.com/photos/220201/pexels-photo-220201.jpeg?auto=compress&cs=tinysrgb&w=400",
-    };
+    setIsLoading(true);
+    const toastId = toast.loading("Generating your magical story... Please wait.");
 
-    const updated = [...generatedStories, newStory];
-    setGeneratedStories(updated);
-    localStorage.setItem("onostories_generated_stories", JSON.stringify(updated));
+    try {
+      // 1. Upload the photo to Supabase Storage
+      const fileExt = uploadedPhoto.name.split('.').pop();
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      // The path for the file within the bucket. No leading slash.
+      const filePath = fileName;
 
-    /* reset */
-    setStoryForm({ childName: "", genre: "", subGenre: "", customGenre: "" });
-    setUploadedPhotos([]);
+      const { error: uploadError } = await supabase.storage
+        .from('child-photos') // The name of the bucket
+        .upload(filePath, uploadedPhoto);
 
-    alert(
-      `Story "${newStory.title}" has been created! Check your Story History tab.`
-    );
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      // 2. Get the public URL of the uploaded photo
+      const { data: { publicUrl } } = supabase.storage
+        .from('child-photos')
+        .getPublicUrl(filePath);
+
+      // 3. Insert the new story record into the 'stories' table
+      const { error: insertError } = await supabase.from('stories').insert({
+        user_id: user.id,
+        title: storyForm.title,
+        child_name: storyForm.childName,
+        age: parseInt(storyForm.age, 10),
+        gender: storyForm.gender,
+        genre: storyForm.genre,
+        short_description: storyForm.short_description,
+        photo_url: publicUrl,
+        // Status defaults to 'pending'
+      });
+
+      if (insertError) {
+        throw insertError;
+      }
+
+      toast.success("Your story is being created! We'll notify you when it's ready.", {
+        id: toastId,
+      });
+
+      // Redirect to the story library where the user will see the new story processing
+      navigate("/story-library");
+
+    } catch (error: any) {
+      console.error("Error creating story:", error);
+      toast.error(`Failed to create story: ${error.message}`, { id: toastId });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleDownloadStory = (storyId: number) => {
-    const story = generatedStories.find((s) => s.id === storyId);
-    alert(
-      `Downloading "${story?.title}" as PDF. In a real app, this would generate and download the PDF file.`
-    );
-  };
-
-  /* ---------- UI ---------- */
+  // UI for the story creation form
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 py-8 px-4">
-      <div className="max-w-7xl mx-auto">
-        {/* header */}
+      <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-lg p-8">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
-            Story Creation
+            Create a New Story
           </h1>
           <p className="text-xl text-gray-600">
-            Create and manage your child's personalized stories
+            Fill in the details below to start the magic.
           </p>
         </div>
 
-        {/* tabs */}
-        <div className="bg-white rounded-2xl shadow-lg mb-8">
-          {/* tab buttons */}
-          <div className="flex border-b border-gray-200">
-            {[
-              { id: "create", label: "Create Story", icon: Plus },
-              { id: "history", label: "Story History", icon: BookOpen },
-              { id: "photos", label: "Manage Photos", icon: ImageIcon },
-            ].map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
-                onClick={() => setActiveTab(id as "create" | "history" | "photos")}
-                className={`flex-1 flex items-center justify-center space-x-2 px-6 py-4 text-sm font-medium transition-colors ${
-                  activeTab === id
-                    ? "text-purple-600 border-b-2 border-purple-600 bg-purple-50"
-                    : "text-gray-500 hover:text-gray-700"
-                }`}
-              >
-                <Icon className="h-5 w-5" />
-                <span>{label}</span>
-              </button>
-            ))}
-          </div>
+        <div className="space-y-8">
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Left Column: Form Inputs */}
+            <div className="space-y-6">
+              {/* Story Title */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Story Title *</label>
+                <input
+                  type="text"
+                  value={storyForm.title}
+                  onChange={(e) => setStoryForm({ ...storyForm, title: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="e.g., Leo the Brave Lion"
+                />
+              </div>
 
-          {/* tab panels */}
-          <div className="p-8">
-            {/* ---------- CREATE TAB ---------- */}
-            {activeTab === "create" && (
-              <div className="space-y-8">
-                <h3 className="text-2xl font-bold text-gray-900 mb-6">
-                  Create New Story
-                </h3>
+              {/* Child's Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Child's Name *</label>
+                <input
+                  type="text"
+                  value={storyForm.childName}
+                  onChange={(e) => setStoryForm({ ...storyForm, childName: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Enter your child's name"
+                />
+              </div>
 
-                <div className="grid md:grid-cols-2 gap-8">
-                  {/* form controls */}
-                  <div className="space-y-6">
-                    {/* Child name */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Child&apos;s Name *
-                      </label>
-                      <input
-                        type="text"
-                        value={storyForm.childName}
-                        onChange={(e) =>
-                          setStoryForm({ ...storyForm, childName: e.target.value })
-                        }
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                        placeholder="Enter your child's name"
-                      />
-                    </div>
-
-                    {/* Genre */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Story Genre *
-                      </label>
-                      <select
-                        value={storyForm.genre}
-                        onChange={(e) =>
-                          setStoryForm({
-                            ...storyForm,
-                            genre: e.target.value,
-                            subGenre: "",
-                          })
-                        }
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                      >
-                        <option value="">Select a genre</option>
-                        {Object.keys(genres).map((g) => (
-                          <option key={g} value={g}>
-                            {g}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Sub-genre */}
-                    {storyForm.genre && (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Sub-Genre
-                        </label>
-                        <select
-                          value={storyForm.subGenre}
-                          onChange={(e) =>
-                            setStoryForm({ ...storyForm, subGenre: e.target.value })
-                          }
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                        >
-                          <option value="">Select a sub-genre</option>
-                          {genres[storyForm.genre].map((sg) => (
-                            <option key={sg} value={sg}>
-                              {sg}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
-
-                    {/* Custom genre description */}
-                    {storyForm.subGenre?.includes("Custom") && (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Custom Genre Description
-                        </label>
-                        <textarea
-                          value={storyForm.customGenre}
-                          onChange={(e) =>
-                            setStoryForm({
-                              ...storyForm,
-                              customGenre: e.target.value,
-                            })
-                          }
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                          rows={3}
-                          placeholder="Describe the type of story you'd like..."
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* photo upload */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Child Photos * ({uploadedPhotos.length}/5)
-                    </label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-400 transition-colors">
-                      <input
-                        id="photo-upload"
-                        type="file"
-                        multiple
-                        accept="image/*"
-                        onChange={handlePhotoUpload}
-                        className="hidden"
-                        disabled={uploadedPhotos.length >= 5}
-                      />
-                      <label
-                        htmlFor="photo-upload"
-                        className={`cursor-pointer ${
-                          uploadedPhotos.length >= 5
-                            ? "opacity-50 cursor-not-allowed"
-                            : ""
-                        }`}
-                      >
-                        <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                        <p className="text-gray-600">
-                          {uploadedPhotos.length >= 5
-                            ? "Maximum 5 photos uploaded"
-                            : "Click to upload photos (up to 5)"}
-                        </p>
-                      </label>
-                    </div>
-
-                    {/* thumbnails */}
-                    {uploadedPhotos.length > 0 && (
-                      <div className="grid grid-cols-3 gap-4 mt-4">
-                        {uploadedPhotos.map((photo, idx) => (
-                          <div key={idx} className="relative">
-                            <img
-                              src={photo}
-                              alt={`Child photo ${idx + 1}`}
-                              className="w-full h-24 object-cover rounded-lg"
-                            />
-                            <button
-                              onClick={() => removePhoto(idx)}
-                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+              {/* Age and Gender */}
+              <div className="flex space-x-4">
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Age *</label>
+                  <input
+                    type="number"
+                    value={storyForm.age}
+                    onChange={(e) => setStoryForm({ ...storyForm, age: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="3-12"
+                    min="3"
+                    max="12"
+                  />
                 </div>
-
-                {/* generate story CTA */}
-                <div className="flex justify-center mt-8">
-                  <button
-                    onClick={handleCreateStory}
-                    className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition-all transform hover:scale-105 flex items-center space-x-2"
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Gender *</label>
+                  <select
+                    value={storyForm.gender}
+                    onChange={(e) => setStoryForm({ ...storyForm, gender: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   >
-                    <Sparkles className="h-5 w-5" />
-                    <span>Generate Story</span>
+                    <option value="">Select...</option>
+                    <option value="boy">Boy</option>
+                    <option value="girl">Girl</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Story Genre */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Story Genre *</label>
+                <select
+                  value={storyForm.genre}
+                  onChange={(e) => setStoryForm({ ...storyForm, genre: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                >
+                  <option value="">Select a genre</option>
+                  <option value="Educational">Educational</option>
+                  <option value="Bedtime">Bedtime</option>
+                  <option value="Moral">Moral</option>
+                </select>
+              </div>
+
+               {/* Short Description */}
+               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Short Description *</label>
+                <textarea
+                  value={storyForm.short_description}
+                  onChange={(e) => setStoryForm({ ...storyForm, short_description: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  rows={3}
+                  placeholder="e.g., A story about sharing toys with friends."
+                />
+              </div>
+            </div>
+
+            {/* Right Column: Photo Upload */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Child's Photo *</label>
+              {photoPreview ? (
+                <div className="relative">
+                  <img src={photoPreview} alt="Child preview" className="w-full h-64 object-cover rounded-lg" />
+                  <button
+                    onClick={removePhoto}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                    disabled={isLoading}
+                  >
+                    <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
-              </div>
-            )}
-
-            {/* ---------- HISTORY TAB ---------- */}
-            {activeTab === "history" && (
-              <div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-6">
-                  Your Stories
-                </h3>
-
-                {generatedStories.length === 0 ? (
-                  /* empty state */
-                  <div className="text-center py-12">
-                    <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                    <h4 className="text-xl font-medium text-gray-600 mb-2">
-                      No stories yet
-                    </h4>
-                    <p className="text-gray-500 mb-6">
-                      Create your first personalized story!
-                    </p>
-                    <button
-                      onClick={() => setActiveTab("create")}
-                      className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-full hover:from-purple-700 hover:to-pink-700 transition-all"
-                    >
-                      Create Story
-                    </button>
-                  </div>
-                ) : (
-                  /* story cards */
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {generatedStories.map((story: Story) => (
-                      <div
-                        key={story.id}
-                        className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all"
-                      >
-                        <img
-                          src={story.thumbnail}
-                          alt={story.title}
-                          className="w-full h-48 object-cover"
-                        />
-                        <div className="p-6">
-                          <div className="flex items-center justify-between mb-3">
-                            <span className="bg-purple-100 text-purple-800 text-xs font-medium px-3 py-1 rounded-full">
-                              {story.genre}
-                            </span>
-                            <span className="text-sm text-gray-500">
-                              {story.createdAt}
-                            </span>
-                          </div>
-                          <h4 className="text-lg font-bold text-gray-900 mb-4">
-                            {story.title}
-                          </h4>
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => alert(`Viewing ${story.title}`)}
-                              className="flex-1 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
-                            >
-                              View
-                            </button>
-                            <button
-                              onClick={() => handleDownloadStory(story.id)}
-                              className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
-                            >
-                              <Download className="h-4 w-4" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* ---------- PHOTOS TAB ---------- */}
-            {activeTab === "photos" && (
-              <div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-6">
-                  Manage Photos
-                </h3>
-                <p className="text-gray-600 mb-6">
-                  Upload and manage your child's photos for story generation. You
-                  can upload up to 5 photos.
-                </p>
-
-                <div className="bg-gray-50 rounded-xl p-6">
-                  <div className="text-center">
-                    <ImageIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600 mb-4">
-                      This feature allows you to manage all uploaded photos in one
-                      place
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      Photos are used to create consistent character
-                      representations across all stories
-                    </p>
-                  </div>
+              ) : (
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-400 transition-colors">
+                  <input
+                    id="photo-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoSelect}
+                    className="hidden"
+                    disabled={isLoading}
+                  />
+                  <label htmlFor="photo-upload" className="cursor-pointer">
+                    <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600">Click to upload a photo</p>
+                    <p className="text-xs text-gray-500 mt-1">PNG, JPG, WEBP</p>
+                  </label>
                 </div>
-              </div>
-            )}
-            {/* ---------- /PHOTOS TAB ---------- */}
+              )}
+            </div>
+          </div>
+
+          {/* Generate Story Button */}
+          <div className="flex justify-center mt-8 pt-8 border-t">
+            <button
+              onClick={handleCreateStory}
+              disabled={isLoading}
+              className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition-all transform hover:scale-105 flex items-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? (
+                <Loader2 className="h-6 w-6 animate-spin" />
+              ) : (
+                <Sparkles className="h-6 w-6" />
+              )}
+              <span>{isLoading ? "Creating..." : "Generate Story"}</span>
+            </button>
           </div>
         </div>
       </div>

@@ -4,7 +4,7 @@ import { Login } from "./components/pages/Login";
 import { Signup } from "./components/pages/Signup";
 import { Pricing } from "./components/pages/Pricing";
 import { CreateStories } from "./components/CreateStories";
-import { StoryLibrary } from "./components/StoryLibrary";
+import  StoryLibrary  from "./components/StoryLibrary";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import { EmailConfirmed } from './components/pages/EmailConfirmed';
 
