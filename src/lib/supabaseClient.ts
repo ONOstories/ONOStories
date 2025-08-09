@@ -9,5 +9,25 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error("Supabase URL and Anon Key must be defined in the .env file");
 }
 
-// Create and export the Supabase client
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Custom storage implementation using sessionStorage
+const sessionAwareStorage = {
+  getItem: (key: string) => {
+    return sessionStorage.getItem(key);
+  },
+  setItem: (key: string, value: string) => {
+    sessionStorage.setItem(key, value);
+  },
+  removeItem: (key: string) => {
+    sessionStorage.removeItem(key);
+  },
+};
+
+// Create and export the Supabase client with the custom storage
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    storage: sessionAwareStorage,
+    autoRefreshToken: true,
+    persistSession: true, // This MUST be true for storage to work
+    detectSessionInUrl: false,
+  },
+});
