@@ -1,5 +1,7 @@
 import { AnimatedTestimonials } from './ui/animated-testimonials';
-
+import personalizedImg from "/public/Personalized.png";
+import aiPoweredImg from "/public/Ai powered.png";
+import safeAndEducationalImg from "/public/Safe and educational.png";
 /**
  * Pastel-gradient block that explains why ONOSTORIES stands out.
  * Drop this anywhere in your page tree.
@@ -28,21 +30,21 @@ export function WhatMakesSpecial() {
               designation: '',
               quote:
                 'Your child becomes the main character in every adventure, with stories tailored to their interests and personality.',
-              src: 'public/Personalized.png',
+              src: personalizedImg,
             },
             {
               name: 'AI-Powered Magic',
               designation: '',
               quote:
                 "Advanced AI creates unique stories and stunning illustrations that bring your child's adventures to life.",
-              src: 'public/Ai powered.png',
+              src: aiPoweredImg,
             },
             {
               name: 'Safe & Educational',
               designation: '',
               quote:
                 'All content is child-friendly and designed to promote learning, creativity, and positive values.',
-              src: 'public/Safe and educational.png',
+              src: safeAndEducationalImg,
             },
           ]}
         />

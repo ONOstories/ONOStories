@@ -1,7 +1,9 @@
 "use client";
 import { twMerge } from "tailwind-merge";
 import { TracingBeam } from "./ui/tracing-beam";
-
+import uploadImg from "/public/upload.png";
+import chooseGenreImg from "/public/choose genre.png";
+import downloadStoryImg from "/public/download story.png";
 /** Landing-page explainer with a full-height tracing beam */
 export function HowItWorks() {
   return (
@@ -73,20 +75,20 @@ const steps = [
     title: "Upload Photos",
     body:
       "Pick 4–5 clear pictures of your child—our AI turns them into a lovable story character.",
-    image: "public/upload.png",
+    image: uploadImg,
   },
   {
     id: 2,
     title: "Choose a Genre",
     body:
       "Select adventure, bedtime or moral tales; every option is packed with exciting sub-plots.",
-    image: "public/choose genre.png",
+    image: chooseGenreImg,
   },
   {
     id: 3,
     title: "Enjoy & Download",
     body:
       "Watch the tale unfold on-screen, then save it as a high-quality PDF to read anytime.",
-    image: "public/download story.png",
+    image: downloadStoryImg,
   },
 ];
