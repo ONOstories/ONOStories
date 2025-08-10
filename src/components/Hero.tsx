@@ -113,9 +113,7 @@ export function Hero() {
       {/* Original Hero Content Layered on Top */}
       <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center text-white p-4">
         <h1 className="mb-6 text-4xl font-extrabold tracking-tight text-white md:text-6xl lg:text-7xl" style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.7)' }}>
-          Your Child's
-          <br className="hidden sm:block" />
-          Story Adventure
+          Your Child's<br className="hidden sm:block" /> Story Adventure
         </h1>
 
         <p className="mx-auto mb-12 max-w-3xl text-lg leading-8 text-gray-200 md:text-xl" style={{ textShadow: '1px 1px 4px rgba(0,0,0,0.7)' }}>
