@@ -8,9 +8,12 @@ import {
   Trash2,
   Sparkles,
   Loader2,
+  User,
+  BookOpen,
+  Camera,
 } from "lucide-react";
 
-// The component for creating new stories, now with enhanced debugging.
+// A visually enhanced component for creating new stories.
 export const CreateStories: React.FC = () => {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
@@ -31,8 +34,8 @@ export const CreateStories: React.FC = () => {
   if (profile && profile.role !== "prouser") {
     navigate("/pricing", { state: { animatePro: true } });
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        Redirecting to pricing...
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <p>Redirecting to pricing...</p>
       </div>
     );
   }
@@ -57,10 +60,8 @@ export const CreateStories: React.FC = () => {
     setStoryForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Main function to handle story creation with detailed logging
   const handleCreateStory = async (e: FormEvent) => {
     e.preventDefault();
-    // Validation checks
     if (!user) {
       toast.error("You must be logged in to create a story.");
       return;
@@ -74,41 +75,26 @@ export const CreateStories: React.FC = () => {
     const toastId = toast.loading("Starting story creation...");
 
     try {
-      console.log("[DEBUG] handleCreateStory started.");
-
-      // STEP 1: UPLOAD PHOTO
-      console.log("[DEBUG] Step 1: Uploading photo...");
-      toast.info("Uploading child's photo...", { id: toastId });
+      // The core logic remains unchanged
       const fileExt = uploadedPhoto.name.split('.').pop();
       const fileName = `${Date.now()}.${fileExt}`;
-      // *** CRITICAL FIX: Upload the file into a folder named after the user's ID. ***
       const filePath = `${user.id}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('child-photos')
         .upload(filePath, uploadedPhoto);
 
-      if (uploadError) {
-        console.error("[DEBUG] Photo upload failed.", uploadError);
-        throw uploadError;
-      }
-      console.log("[DEBUG] Step 1 SUCCESS: Photo uploaded to path:", filePath);
+      if (uploadError) throw uploadError;
 
-      // STEP 2: GET PUBLIC URL
-      console.log("[DEBUG] Step 2: Getting public URL for the photo...");
       const { data: { publicUrl } } = supabase.storage
         .from('child-photos')
         .getPublicUrl(filePath);
         
-      if (!publicUrl) {
-          throw new Error("Could not get public URL for the uploaded photo.");
-      }
-      console.log("[DEBUG] Step 2 SUCCESS: Got public URL:", publicUrl);
+      if (!publicUrl) throw new Error("Could not get public URL for the uploaded photo.");
 
-      // STEP 3: INSERT STORY RECORD
-      console.log("[DEBUG] Step 3: Preparing to insert story record...");
-      toast.info("Creating story record...", { id: toastId });
-      const storyToInsert = {
+      const { data: storyData, error: insertError } = await supabase
+        .from('stories')
+        .insert({
           user_id: user.id,
           title: storyForm.title,
           child_name: storyForm.childName,
@@ -117,170 +103,136 @@ export const CreateStories: React.FC = () => {
           genre: storyForm.genre,
           short_description: storyForm.short_description,
           photo_url: publicUrl,
-        };
-      console.log("[DEBUG] Story object to insert:", storyToInsert);
-
-      const { data: storyData, error: insertError } = await supabase
-        .from('stories')
-        .insert(storyToInsert)
+        })
         .select()
         .single();
       
-      if (insertError) {
-          console.error("[DEBUG] Database insert failed.", insertError);
-          throw insertError;
-      }
-      console.log("[DEBUG] Step 3 SUCCESS: Story inserted with ID:", storyData.id);
+      if (insertError) throw insertError;
 
       const storyId = storyData.id;
 
-      // STEP 4: INVOKE EDGE FUNCTION
-      console.log(`[DEBUG] Step 4: Invoking 'create-storybook' function with storyId: ${storyId}`);
-      toast.info("Generating illustrations and PDF...", { id: toastId });
       const { data: functionData, error: functionError } = await supabase.functions.invoke('create-storybook', {
         body: { storyId, userId: user.id },
       });
 
-      if (functionError) {
-        console.error("[DEBUG] Function invocation failed.", functionError);
-        throw functionError;
-      }
-      console.log("[DEBUG] Step 4 SUCCESS: Function invoked. Response:", functionData);
+      if (functionError) throw functionError;
+      if (functionData.error) throw new Error(`The function ran but returned an error: ${functionData.error}`);
 
-      if (functionData.error) {
-        throw new Error(`The function ran but returned an error: ${functionData.error}`);
-      }
-
-      // STEP 5: OPEN PDF
-      console.log("[DEBUG] Step 5: Opening PDF...");
       toast.success("Your storybook is ready! Opening now...", { id: toastId });
       window.open(functionData.pdfUrl, '_blank');
-      console.log("[DEBUG] Step 5 SUCCESS: PDF opened.");
 
     } catch (error: any) {
-      console.error("--- STORY CREATION FAILED ---");
-      console.error("Error Message:", error.message);
-      console.error("Full Error Object:", error);
+      console.error("Error creating story:", error);
       toast.error(`Failed to create story: ${error.message}`, { id: toastId });
     } finally {
       setIsLoading(false);
-      console.log("[DEBUG] handleCreateStory finished.");
     }
   };
 
+  // Visually enhanced UI for the story creation form
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 py-8 px-4">
-      <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-lg p-8">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
-            Create a New Story
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto">
+        <div className="text-center mb-10">
+          <h1 className="text-5xl font-bold tracking-tight bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent mb-4 font-serif">
+            Weave Your Story
           </h1>
           <p className="text-xl text-gray-600">
-            Fill in the details below to start the magic.
+            Fill in the details below and watch the magic unfold.
           </p>
         </div>
 
-        <form onSubmit={handleCreateStory} className="space-y-8">
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* Left Column: Form Inputs */}
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Story Title *</label>
-                <input
-                  type="text" name="title" value={storyForm.title} onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="e.g., Leo the Brave Lion"
-                />
-              </div>
+        <form onSubmit={handleCreateStory} className="bg-white rounded-2xl shadow-2xl shadow-purple-100 p-8 space-y-10">
+          
+          {/* Section 1: Hero Details */}
+          <div className="space-y-6">
+            <div className="flex items-center space-x-3">
+              <div className="bg-purple-100 p-2 rounded-full"><User className="h-6 w-6 text-purple-600" /></div>
+              <h2 className="text-2xl font-semibold text-gray-800">About the Hero</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Child's Name *</label>
-                <input
-                  type="text" name="childName" value={storyForm.childName} onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="Enter your child's name"
-                />
+                <input type="text" name="childName" value={storyForm.childName} onChange={handleChange} className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition" placeholder="e.g., Lily" />
               </div>
               <div className="flex space-x-4">
                 <div className="flex-1">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Age *</label>
-                  <input
-                    type="number" name="age" value={storyForm.age} onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    placeholder="3-12" min="3" max="12"
-                  />
+                  <input type="number" name="age" value={storyForm.age} onChange={handleChange} className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition" placeholder="3-12" min="3" max="12" />
                 </div>
                 <div className="flex-1">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Gender *</label>
-                  <select
-                    name="gender" value={storyForm.gender} onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  >
+                  <select name="gender" value={storyForm.gender} onChange={handleChange} className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition">
                     <option value="">Select...</option>
                     <option value="boy">Boy</option>
                     <option value="girl">Girl</option>
                   </select>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Section 2: Story Details */}
+          <div className="space-y-6">
+            <div className="flex items-center space-x-3">
+              <div className="bg-pink-100 p-2 rounded-full"><BookOpen className="h-6 w-6 text-pink-600" /></div>
+              <h2 className="text-2xl font-semibold text-gray-800">Story Details</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Story Title *</label>
+                <input type="text" name="title" value={storyForm.title} onChange={handleChange} className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition" placeholder="e.g., The Magical Seed" />
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Story Genre *</label>
-                <select
-                  name="genre" value={storyForm.genre} onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                >
+                <select name="genre" value={storyForm.genre} onChange={handleChange} className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition">
                   <option value="">Select a genre</option>
                   <option value="Educational">Educational</option>
                   <option value="Bedtime">Bedtime</option>
                   <option value="Moral">Moral</option>
+                  <option value="Adventure">Adventure</option>
                 </select>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Short Description *</label>
-                <textarea
-                  name="short_description" value={storyForm.short_description} onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  rows={3}
-                  placeholder="e.g., A story about sharing toys with friends."
-                />
-              </div>
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">A short idea for the story *</label>
+              <textarea name="short_description" value={storyForm.short_description} onChange={handleChange} className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition" rows={4} placeholder="e.g., A story about a shy firefly who learns to let his light shine." />
+            </div>
+          </div>
 
-            {/* Right Column: Photo Upload */}
+          {/* Section 3: Photo Upload */}
+          <div className="space-y-6">
+             <div className="flex items-center space-x-3">
+              <div className="bg-orange-100 p-2 rounded-full"><Camera className="h-6 w-6 text-orange-600" /></div>
+              <h2 className="text-2xl font-semibold text-gray-800">Add a Touch of Magic</h2>
+            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Child's Photo *</label>
               {photoPreview ? (
-                <div className="relative">
-                  <img src={photoPreview} alt="Child preview" className="w-full h-64 object-cover rounded-lg" />
-                  <button
-                    type="button" onClick={removePhoto}
-                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
-                    disabled={isLoading}
-                  >
-                    <Trash2 className="h-4 w-4" />
+                <div className="relative group">
+                  <img src={photoPreview} alt="Child preview" className="w-full h-80 object-cover rounded-xl shadow-md" />
+                  <button type="button" onClick={removePhoto} className="absolute top-3 right-3 bg-black/50 text-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity" disabled={isLoading}>
+                    <Trash2 className="h-5 w-5" />
                   </button>
                 </div>
               ) : (
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-400 transition-colors">
-                  <input
-                    id="photo-upload" type="file" accept="image/*" onChange={handlePhotoSelect}
-                    className="hidden" disabled={isLoading}
-                  />
-                  <label htmlFor="photo-upload" className="cursor-pointer">
-                    <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600">Click to upload a photo</p>
-                    <p className="text-xs text-gray-500 mt-1">PNG, JPG, WEBP</p>
+                <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-purple-400 hover:bg-purple-50 transition-colors duration-300">
+                  <input id="photo-upload" type="file" accept="image/*" onChange={handlePhotoSelect} className="hidden" disabled={isLoading} />
+                  <label htmlFor="photo-upload" className="cursor-pointer flex flex-col items-center">
+                    <Upload className="h-12 w-12 text-gray-400 mb-4" />
+                    <span className="font-semibold text-purple-600">Click to upload a photo</span>
+                    <span className="text-xs text-gray-500 mt-1">PNG, JPG, or WEBP</span>
                   </label>
                 </div>
               )}
             </div>
           </div>
 
-          <div className="flex justify-center mt-8 pt-8 border-t">
-            <button
-              type="submit" disabled={isLoading}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition-all transform hover:scale-105 flex items-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
+          {/* Generate Story Button */}
+          <div className="flex justify-center pt-6 border-t border-gray-200">
+            <button type="submit" disabled={isLoading} className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-10 py-4 rounded-full text-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition-all transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center space-x-3 disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100">
               {isLoading ? (<Loader2 className="h-6 w-6 animate-spin" />) : (<Sparkles className="h-6 w-6" />)}
-              <span>{isLoading ? "Creating..." : "Generate Story"}</span>
+              <span>{isLoading ? "Creating Your Story..." : "Generate Magic"}</span>
             </button>
           </div>
         </form>
