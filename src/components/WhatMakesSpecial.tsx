@@ -28,21 +28,21 @@ export function WhatMakesSpecial() {
               designation: '',
               quote:
                 'Your child becomes the main character in every adventure, with stories tailored to their interests and personality.',
-              src: 'src/assets/Personalized.png',
+              src: 'public/Personalized.png',
             },
             {
               name: 'AI-Powered Magic',
               designation: '',
               quote:
                 "Advanced AI creates unique stories and stunning illustrations that bring your child's adventures to life.",
-              src: 'src/assets/Ai powered.png',
+              src: 'public/Ai powered.png',
             },
             {
               name: 'Safe & Educational',
               designation: '',
               quote:
                 'All content is child-friendly and designed to promote learning, creativity, and positive values.',
-              src: 'src/assets/Safe and educational.png',
+              src: 'public/Safe and educational.png',
             },
           ]}
         />
