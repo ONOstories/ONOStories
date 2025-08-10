@@ -3,7 +3,7 @@
 "use client";
 import { Instagram, Twitter, Linkedin } from "lucide-react";
 import { Link } from "react-router-dom";
-import logo from 'public/ONOstories_logo.jpg';
+import logo from '../assets/ONOstories_logo.jpg';
 
 export function Footer() {
   return (
