@@ -1,27 +1,23 @@
-import React, { useState } from "react";
+import React, { useState, ChangeEvent, FormEvent } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../contexts/AuthProvider";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
   Upload,
-  BookOpen,
   Trash2,
-  Plus,
-  ImageIcon,
   Sparkles,
   Loader2,
 } from "lucide-react";
 
-// The component for creating new stories, now fully integrated with Supabase.
-export function CreateStories() {
+// The component for creating new stories, now with enhanced debugging.
+export const CreateStories: React.FC = () => {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [uploadedPhoto, setUploadedPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
-  // Expanded form state to include all required fields for the 'stories' table
   const [storyForm, setStoryForm] = useState({
     title: "",
     childName: "",
@@ -32,9 +28,8 @@ export function CreateStories() {
   });
 
   // Redirect non-pro users to the pricing page
-  if (profile?.role !== "prouser") {
+  if (profile && profile.role !== "prouser") {
     navigate("/pricing", { state: { animatePro: true } });
-    // Render a fallback while redirecting
     return (
       <div className="min-h-screen flex items-center justify-center">
         Redirecting to pricing...
@@ -42,16 +37,13 @@ export function CreateStories() {
     );
   }
 
-  // Handles the selection of a photo file
-  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoSelect = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     setUploadedPhoto(file);
     setPhotoPreview(URL.createObjectURL(file));
   };
 
-  // Removes the selected photo
   const removePhoto = () => {
     setUploadedPhoto(null);
     if (photoPreview) {
@@ -59,79 +51,127 @@ export function CreateStories() {
       setPhotoPreview(null);
     }
   };
+  
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setStoryForm((prev) => ({ ...prev, [name]: value }));
+  };
 
-  // Main function to handle story creation
-  const handleCreateStory = async () => {
-    // Basic form validation
-    if (!storyForm.title || !storyForm.childName || !storyForm.age || !storyForm.gender || !storyForm.genre || !storyForm.short_description) {
-      toast.error("Please fill in all the required fields.");
-      return;
-    }
-    if (!uploadedPhoto) {
-      toast.error("Please upload a photo of the child.");
-      return;
-    }
+  // Main function to handle story creation with detailed logging
+  const handleCreateStory = async (e: FormEvent) => {
+    e.preventDefault();
+    // Validation checks
     if (!user) {
-        toast.error("You must be logged in to create a story.");
-        return;
+      toast.error("You must be logged in to create a story.");
+      return;
+    }
+    if (!storyForm.title || !storyForm.childName || !storyForm.age || !storyForm.gender || !storyForm.genre || !storyForm.short_description || !uploadedPhoto) {
+      toast.error("Please fill in all the required fields and upload a photo.");
+      return;
     }
 
     setIsLoading(true);
-    const toastId = toast.loading("Generating your magical story... Please wait.");
+    const toastId = toast.loading("Starting story creation...");
 
     try {
-      // 1. Upload the photo to Supabase Storage
+      console.log("[DEBUG] handleCreateStory started.");
+
+      // STEP 1: UPLOAD PHOTO
+      console.log("[DEBUG] Step 1: Uploading photo...");
+      toast.info("Uploading child's photo...", { id: toastId });
       const fileExt = uploadedPhoto.name.split('.').pop();
       const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-      // The path for the file within the bucket. No leading slash.
       const filePath = fileName;
 
       const { error: uploadError } = await supabase.storage
-        .from('child-photos') // The name of the bucket
+        .from('child-photos')
         .upload(filePath, uploadedPhoto);
 
       if (uploadError) {
+        console.error("[DEBUG] Photo upload failed.", uploadError);
         throw uploadError;
       }
+      console.log("[DEBUG] Step 1 SUCCESS: Photo uploaded.");
 
-      // 2. Get the public URL of the uploaded photo
-      const { data: { publicUrl } } = supabase.storage
+      // STEP 2: GET PUBLIC URL (Safer method)
+      console.log("[DEBUG] Step 2: Getting public URL for the photo...");
+      const { data: urlData } = supabase.storage
         .from('child-photos')
         .getPublicUrl(filePath);
 
-      // 3. Insert the new story record into the 'stories' table
-      const { error: insertError } = await supabase.from('stories').insert({
-        user_id: user.id,
-        title: storyForm.title,
-        child_name: storyForm.childName,
-        age: parseInt(storyForm.age, 10),
-        gender: storyForm.gender,
-        genre: storyForm.genre,
-        short_description: storyForm.short_description,
-        photo_url: publicUrl,
-        // Status defaults to 'pending'
+      if (!urlData || !urlData.publicUrl) {
+          throw new Error("Could not get public URL for the uploaded photo.");
+      }
+      const publicUrl = urlData.publicUrl;
+      console.log("[DEBUG] Step 2 SUCCESS: Got public URL:", publicUrl);
+
+      // STEP 3: INSERT STORY RECORD
+      console.log("[DEBUG] Step 3: Preparing to insert story record...");
+      toast.info("Creating story record...", { id: toastId });
+      const storyToInsert = {
+          user_id: user.id,
+          title: storyForm.title,
+          child_name: storyForm.childName,
+          age: parseInt(storyForm.age, 10),
+          gender: storyForm.gender,
+          genre: storyForm.genre,
+          short_description: storyForm.short_description,
+          photo_url: publicUrl,
+          pages: [ // Mocked pages for PDF generation
+            { page_number: 1, content: `Once upon a time, in a land of wonder, lived a child named ${storyForm.childName}.`, illustration_prompt: `A cute child named ${storyForm.childName} in a magical forest, cartoon style` },
+            { page_number: 2, content: `One day, ${storyForm.childName} discovered a hidden path that shimmered with light.`, illustration_prompt: `A child, ${storyForm.childName}, standing at the entrance of a glowing path in a forest, children's storybook illustration` }
+          ],
+        };
+      console.log("[DEBUG] Story object to insert:", storyToInsert);
+
+      const { data: storyData, error: insertError } = await supabase
+        .from('stories')
+        .insert(storyToInsert)
+        .select()
+        .single();
+      
+      if (insertError) {
+          console.error("[DEBUG] Database insert failed.", insertError);
+          throw insertError;
+      }
+      console.log("[DEBUG] Step 3 SUCCESS: Story inserted with ID:", storyData.id);
+
+      const storyId = storyData.id;
+
+      // STEP 4: INVOKE EDGE FUNCTION
+      console.log(`[DEBUG] Step 4: Invoking 'create-storybook' function with storyId: ${storyId}`);
+      toast.info("Generating illustrations and PDF...", { id: toastId });
+      const { data: functionData, error: functionError } = await supabase.functions.invoke('create-storybook', {
+        body: { storyId, userId: user.id },
       });
 
-      if (insertError) {
-        throw insertError;
+      if (functionError) {
+        console.error("[DEBUG] Function invocation failed.", functionError);
+        throw functionError;
+      }
+      console.log("[DEBUG] Step 4 SUCCESS: Function invoked. Response:", functionData);
+
+      if (functionData.error) {
+        throw new Error(`The function ran but returned an error: ${functionData.error}`);
       }
 
-      toast.success("Your story is being created! We'll notify you when it's ready.", {
-        id: toastId,
-      });
-
-      // Redirect to the story library where the user will see the new story processing
-      navigate("/story-library");
+      // STEP 5: OPEN PDF
+      console.log("[DEBUG] Step 5: Opening PDF...");
+      toast.success("Your storybook is ready! Opening now...", { id: toastId });
+      window.open(functionData.pdfUrl, '_blank');
+      console.log("[DEBUG] Step 5 SUCCESS: PDF opened.");
 
     } catch (error: any) {
-      console.error("Error creating story:", error);
+      console.error("--- STORY CREATION FAILED ---");
+      console.error("Error Message:", error.message);
+      console.error("Full Error Object:", error);
       toast.error(`Failed to create story: ${error.message}`, { id: toastId });
     } finally {
       setIsLoading(false);
+      console.log("[DEBUG] handleCreateStory finished.");
     }
   };
 
-  // UI for the story creation form
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 py-8 px-4">
       <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-lg p-8">
@@ -144,53 +184,39 @@ export function CreateStories() {
           </p>
         </div>
 
-        <div className="space-y-8">
+        <form onSubmit={handleCreateStory} className="space-y-8">
           <div className="grid md:grid-cols-2 gap-8">
             {/* Left Column: Form Inputs */}
             <div className="space-y-6">
-              {/* Story Title */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Story Title *</label>
                 <input
-                  type="text"
-                  value={storyForm.title}
-                  onChange={(e) => setStoryForm({ ...storyForm, title: e.target.value })}
+                  type="text" name="title" value={storyForm.title} onChange={handleChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   placeholder="e.g., Leo the Brave Lion"
                 />
               </div>
-
-              {/* Child's Name */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Child's Name *</label>
                 <input
-                  type="text"
-                  value={storyForm.childName}
-                  onChange={(e) => setStoryForm({ ...storyForm, childName: e.target.value })}
+                  type="text" name="childName" value={storyForm.childName} onChange={handleChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   placeholder="Enter your child's name"
                 />
               </div>
-
-              {/* Age and Gender */}
               <div className="flex space-x-4">
                 <div className="flex-1">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Age *</label>
                   <input
-                    type="number"
-                    value={storyForm.age}
-                    onChange={(e) => setStoryForm({ ...storyForm, age: e.target.value })}
+                    type="number" name="age" value={storyForm.age} onChange={handleChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    placeholder="3-12"
-                    min="3"
-                    max="12"
+                    placeholder="3-12" min="3" max="12"
                   />
                 </div>
                 <div className="flex-1">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Gender *</label>
                   <select
-                    value={storyForm.gender}
-                    onChange={(e) => setStoryForm({ ...storyForm, gender: e.target.value })}
+                    name="gender" value={storyForm.gender} onChange={handleChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   >
                     <option value="">Select...</option>
@@ -199,13 +225,10 @@ export function CreateStories() {
                   </select>
                 </div>
               </div>
-
-              {/* Story Genre */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Story Genre *</label>
                 <select
-                  value={storyForm.genre}
-                  onChange={(e) => setStoryForm({ ...storyForm, genre: e.target.value })}
+                  name="genre" value={storyForm.genre} onChange={handleChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 >
                   <option value="">Select a genre</option>
@@ -214,13 +237,10 @@ export function CreateStories() {
                   <option value="Moral">Moral</option>
                 </select>
               </div>
-
-               {/* Short Description */}
-               <div>
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Short Description *</label>
                 <textarea
-                  value={storyForm.short_description}
-                  onChange={(e) => setStoryForm({ ...storyForm, short_description: e.target.value })}
+                  name="short_description" value={storyForm.short_description} onChange={handleChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   rows={3}
                   placeholder="e.g., A story about sharing toys with friends."
@@ -235,7 +255,7 @@ export function CreateStories() {
                 <div className="relative">
                   <img src={photoPreview} alt="Child preview" className="w-full h-64 object-cover rounded-lg" />
                   <button
-                    onClick={removePhoto}
+                    type="button" onClick={removePhoto}
                     className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
                     disabled={isLoading}
                   >
@@ -245,12 +265,8 @@ export function CreateStories() {
               ) : (
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-400 transition-colors">
                   <input
-                    id="photo-upload"
-                    type="file"
-                    accept="image/*"
-                    onChange={handlePhotoSelect}
-                    className="hidden"
-                    disabled={isLoading}
+                    id="photo-upload" type="file" accept="image/*" onChange={handlePhotoSelect}
+                    className="hidden" disabled={isLoading}
                   />
                   <label htmlFor="photo-upload" className="cursor-pointer">
                     <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -262,23 +278,17 @@ export function CreateStories() {
             </div>
           </div>
 
-          {/* Generate Story Button */}
           <div className="flex justify-center mt-8 pt-8 border-t">
             <button
-              onClick={handleCreateStory}
-              disabled={isLoading}
+              type="submit" disabled={isLoading}
               className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition-all transform hover:scale-105 flex items-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? (
-                <Loader2 className="h-6 w-6 animate-spin" />
-              ) : (
-                <Sparkles className="h-6 w-6" />
-              )}
+              {isLoading ? (<Loader2 className="h-6 w-6 animate-spin" />) : (<Sparkles className="h-6 w-6" />)}
               <span>{isLoading ? "Creating..." : "Generate Story"}</span>
             </button>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );
-}
+};
