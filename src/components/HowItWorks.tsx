@@ -73,20 +73,20 @@ const steps = [
     title: "Upload Photos",
     body:
       "Pick 4–5 clear pictures of your child—our AI turns them into a lovable story character.",
-    image: "src/assets/upload.png",
+    image: "public/upload.png",
   },
   {
     id: 2,
     title: "Choose a Genre",
     body:
       "Select adventure, bedtime or moral tales; every option is packed with exciting sub-plots.",
-    image: "src/assets/choose genre.png",
+    image: "public/choose genre.png",
   },
   {
     id: 3,
     title: "Enjoy & Download",
     body:
       "Watch the tale unfold on-screen, then save it as a high-quality PDF to read anytime.",
-    image: "src/assets/download story.png",
+    image: "public/download story.png",
   },
 ];
