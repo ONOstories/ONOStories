@@ -131,7 +131,7 @@ const StoryLibrary = () => {
   }, [user]);
 
   if (loading) {
-    return <div className="text-center py-10">Loading your magical stories...</div>;
+    return <div className="text-4xl font-bold mb-8 text-center">Your free-tier stories are on their way! Stay Tuned...</div>;
   }
 
   return (
