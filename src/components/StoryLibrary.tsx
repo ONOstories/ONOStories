@@ -131,7 +131,13 @@ const StoryLibrary = () => {
   }, [user]);
 
   if (loading) {
-    return <div className="text-3xl font-bold mb-8 text-center">Your free-tier stories are on their way! Stay Tuned...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-[40vh]">
+        <div className="text-4xl font-bold text-center">
+          Your free-tier stories are on their way! Stay Tuned...
+        </div>
+      </div>
+    );
   }
 
   return (
