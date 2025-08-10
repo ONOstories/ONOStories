@@ -1,4 +1,5 @@
 // supabase/functions/create-storybook/index.ts
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.43.4";
 import { PDFDocument, rgb } from "https://esm.sh/pdf-lib@1.17.1";
@@ -6,29 +7,24 @@ import { corsHeaders } from "../_shared/cors.ts";
 
 // The main function that handles requests
 serve(async (req) => {
-  console.log("--- Create-storybook function invoked! ---"); // DEBUG: Check if function is reached
+  console.log("--- Create-storybook function invoked! ---");
 
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
     // 1. INITIAL SETUP
-    // -----------------
-    // Create a Supabase client with the service role key for admin-level access
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Get the Replicate API key from environment variables (Supabase Secrets)
     const REPLICATE_API_KEY = Deno.env.get("REPLICATE_API_KEY");
     if (!REPLICATE_API_KEY) {
       throw new Error("REPLICATE_API_KEY is not set in Supabase secrets.");
     }
 
-    // Extract the story ID and user ID from the request body
     const { storyId, userId } = await req.json();
     if (!storyId || !userId) {
       throw new Error("Missing storyId or userId in the request body.");
@@ -36,31 +32,46 @@ serve(async (req) => {
 
     console.log(`[STORY: ${storyId}] Starting storybook creation for user: ${userId}`);
 
-    // 2. FETCH STORY DATA
-    // -------------------
-    // Retrieve the story content and pages from your database
-    const { data: storyData, error: storyError } = await supabaseClient
+    // 2. FETCH INITIAL STORY DATA
+    const { data: initialStoryData, error: fetchError } = await supabaseClient
       .from("stories")
-      .select("title, pages")
+      .select("title, child_name, short_description")
       .eq("id", storyId)
       .single();
 
-    if (storyError) throw storyError;
-    if (!storyData) throw new Error("Story not found.");
+    if (fetchError) throw fetchError;
+    if (!initialStoryData) throw new Error("Initial story data not found.");
+    
+    const { title, child_name, short_description } = initialStoryData;
 
-    const storyPages = storyData.pages as { page_number: number; content: string; illustration_prompt: string }[];
-    const storyTitle = storyData.title;
+    // 3. GENERATE STORY CONTENT IN MEMORY
+    console.log(`[STORY: ${storyId}] Generating story content...`);
+    const generatedPages = [
+      {
+        page_number: 1,
+        content: `Once upon a time, a brave child named ${child_name} decided to go on an adventure based on this idea: "${short_description}".`,
+        illustration_prompt: `A cute child named ${child_name} looking excited at the start of an adventure, vibrant children's storybook illustration style.`
+      },
+      {
+        page_number: 2,
+        content: `${child_name} journeyed through a magical forest and met a friendly talking squirrel.`,
+        illustration_prompt: `The child ${child_name} talking to a friendly squirrel on a tree branch in a magical, glowing forest, simple cartoon style.`
+      },
+      {
+        page_number: 3,
+        content: `Together, they discovered a hidden treasure chest filled with sparkling candies and toys.`,
+        illustration_prompt: `The child ${child_name} and a squirrel opening a glowing treasure chest full of candy, joyous and colorful.`
+      }
+    ];
+    console.log(`[STORY: ${storyId}] Story content generated.`);
 
-    // 3. IMAGE GENERATION & PDF CREATION
-    // ------------------------------------
+    // 4. IMAGE GENERATION & PDF CREATION
     const pdfDoc = await PDFDocument.create();
 
-    // Loop through each page of the story
-    for (let i = 0; i < storyPages.length; i++) {
-      const page = storyPages[i];
+    for (let i = 0; i < generatedPages.length; i++) {
+      const page = generatedPages[i];
       console.log(`[STORY: ${storyId}] Generating image for page ${i + 1} with Replicate...`);
 
-      // A. START THE REPLICATE PREDICTION
       const startResponse = await fetch("https://api.replicate.com/v1/predictions", {
         method: "POST",
         headers: {
@@ -68,10 +79,9 @@ serve(async (req) => {
           "Authorization": `Token ${REPLICATE_API_KEY}`
         },
         body: JSON.stringify({
-          version: "ac732df83cea72166812028106150c841417482f5780aa4e97a85c602DE7775F",
-          input: {
-            prompt: `${page.illustration_prompt}, children's storybook illustration, vibrant colors, simple style`
-          }
+          // *** CRITICAL FIX: Updated to the latest correct version hash for SDXL ***
+          version: "39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
+          input: { prompt: page.illustration_prompt }
         }),
       });
 
@@ -80,9 +90,8 @@ serve(async (req) => {
         throw new Error(`Replicate API failed to start prediction: ${prediction.detail}`);
       }
 
-      // B. POLL FOR THE RESULT (ASYNC PROCESS)
       while (prediction.status !== "succeeded" && prediction.status !== "failed") {
-        await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait for 1 second
+        await new Promise((resolve) => setTimeout(resolve, 1000));
         const pollResponse = await fetch(prediction.urls.get, {
           headers: {
             "Authorization": `Token ${REPLICATE_API_KEY}`,
@@ -97,39 +106,28 @@ serve(async (req) => {
         throw new Error(`Replicate image generation failed: ${prediction.error}`);
       }
 
-      // C. PROCESS THE SUCCESSFUL RESULT
       const imageUrl = prediction.output[0];
       const imageResponse = await fetch(imageUrl);
       const imageBytes = await imageResponse.arrayBuffer();
-
-      // D. ADD IMAGE AND TEXT TO PDF
-      const pdfPage = pdfDoc.addPage();
-      const { width, height } = pdfPage.getSize();
       const embeddedImage = await pdfDoc.embedPng(imageBytes);
 
+      const pdfPage = pdfDoc.addPage();
+      const { width, height } = pdfPage.getSize();
+      
       pdfPage.drawImage(embeddedImage, {
-        x: 50,
-        y: height / 2,
-        width: width - 100,
-        height: height / 2 - 50,
+        x: 50, y: height / 2, width: width - 100, height: height / 2 - 50,
       });
 
       pdfPage.drawText(page.content, {
-        x: 50,
-        y: 50,
-        size: 14,
-        color: rgb(0, 0, 0),
-        maxWidth: width - 100,
-        lineHeight: 20,
+        x: 50, y: 50, size: 14, color: rgb(0, 0, 0), maxWidth: width - 100, lineHeight: 20,
       });
 
       console.log(`[STORY: ${storyId}] Successfully added page ${i + 1} to PDF.`);
     }
 
-    // 4. SAVE AND UPLOAD THE FINAL PDF
-    // --------------------------------
+    // 5. SAVE AND UPLOAD THE FINAL PDF
     const pdfBytes = await pdfDoc.save();
-    const pdfFileName = `${storyTitle.replace(/\s+/g, '_')}_${storyId}.pdf`;
+    const pdfFileName = `${title.replace(/\s+/g, '_')}_${storyId}.pdf`;
     const filePath = `${userId}/${pdfFileName}`;
 
     const { error: uploadError } = await supabaseClient.storage
@@ -147,8 +145,7 @@ serve(async (req) => {
 
     console.log(`[STORY: ${storyId}] Storybook PDF successfully created and uploaded.`);
 
-    // 5. RETURN THE PUBLIC URL
-    // ------------------------
+    // 6. RETURN THE PUBLIC URL
     return new Response(JSON.stringify({ pdfUrl: urlData.publicUrl }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,

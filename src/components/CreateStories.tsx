@@ -80,8 +80,9 @@ export const CreateStories: React.FC = () => {
       console.log("[DEBUG] Step 1: Uploading photo...");
       toast.info("Uploading child's photo...", { id: toastId });
       const fileExt = uploadedPhoto.name.split('.').pop();
-      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-      const filePath = fileName;
+      const fileName = `${Date.now()}.${fileExt}`;
+      // *** CRITICAL FIX: Upload the file into a folder named after the user's ID. ***
+      const filePath = `${user.id}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('child-photos')
@@ -91,18 +92,17 @@ export const CreateStories: React.FC = () => {
         console.error("[DEBUG] Photo upload failed.", uploadError);
         throw uploadError;
       }
-      console.log("[DEBUG] Step 1 SUCCESS: Photo uploaded.");
+      console.log("[DEBUG] Step 1 SUCCESS: Photo uploaded to path:", filePath);
 
-      // STEP 2: GET PUBLIC URL (Safer method)
+      // STEP 2: GET PUBLIC URL
       console.log("[DEBUG] Step 2: Getting public URL for the photo...");
-      const { data: urlData } = supabase.storage
+      const { data: { publicUrl } } = supabase.storage
         .from('child-photos')
         .getPublicUrl(filePath);
-
-      if (!urlData || !urlData.publicUrl) {
+        
+      if (!publicUrl) {
           throw new Error("Could not get public URL for the uploaded photo.");
       }
-      const publicUrl = urlData.publicUrl;
       console.log("[DEBUG] Step 2 SUCCESS: Got public URL:", publicUrl);
 
       // STEP 3: INSERT STORY RECORD
@@ -117,10 +117,6 @@ export const CreateStories: React.FC = () => {
           genre: storyForm.genre,
           short_description: storyForm.short_description,
           photo_url: publicUrl,
-          pages: [ // Mocked pages for PDF generation
-            { page_number: 1, content: `Once upon a time, in a land of wonder, lived a child named ${storyForm.childName}.`, illustration_prompt: `A cute child named ${storyForm.childName} in a magical forest, cartoon style` },
-            { page_number: 2, content: `One day, ${storyForm.childName} discovered a hidden path that shimmered with light.`, illustration_prompt: `A child, ${storyForm.childName}, standing at the entrance of a glowing path in a forest, children's storybook illustration` }
-          ],
         };
       console.log("[DEBUG] Story object to insert:", storyToInsert);
 
