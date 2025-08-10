@@ -1,0 +1,108 @@
+/* src/components/Testimonials.css */
+
+.testimonials-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 3em;
+  margin: auto;
+  padding: 1.5em 0;
+  width: calc(100% - 3em);
+  background-color: #f9fafb; /* Light gray background */
+}
+
+.card {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 25em;
+  --hue: 260; /* Purple Hue */
+  --sat: 80%;
+}
+
+.card__surface {
+  animation: fade-in 1s cubic-bezier(0.33, 1, 0.68, 1);
+  background: white;
+  border-radius: 1em;
+  box-shadow: 0 0.25em 0.625em hsla(0, 0%, 0%, 0.05);
+  min-width: 0;
+  transition: background-color 0.3s;
+}
+
+.card__header,
+.card__description {
+  animation: fade-slide-up 0.8s cubic-bezier(0.33, 1, 0.68, 1) forwards;
+  opacity: 0;
+}
+
+.card__header {
+  display: flex;
+  gap: 1.5em;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5em;
+}
+
+.card__title {
+  font-size: 1.375em;
+  font-weight: 600;
+  color: #2e1065; /* Dark Purple */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card__badge {
+  display: flex;
+  align-items: center;
+  color: #fbbf24; /* Amber-400 for stars */
+}
+
+.card__description {
+  animation-delay: 0.2s;
+  color: #4c1d95; /* Medium Purple */
+  margin-bottom: 2.25em;
+  min-height: 4.5em;
+  text-align: left;
+  transition: color 0.3s;
+  font-style: italic;
+}
+
+.card__author {
+  color: #2e1065;
+  font-weight: 600;
+}
+
+.card__role {
+  color: #9333ea; /* Bright Purple */
+  font-size: 0.9em;
+}
+
+.card__container {
+  overflow: hidden;
+}
+
+.card__content {
+  padding: 2.25em;
+}
+
+/* Animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(3em);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

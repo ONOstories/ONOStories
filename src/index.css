@@ -1,3 +1,6 @@
+@import './components/Hero.css';
+@import './components/Testimonials.css';
+@import './components/Footer.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
