@@ -190,7 +190,6 @@ export const CreateStories: React.FC = () => {
                   <option value="Educational">Educational</option>
                   <option value="Bedtime">Bedtime</option>
                   <option value="Moral">Moral</option>
-                  <option value="Adventure">Adventure</option>
                 </select>
               </div>
             </div>

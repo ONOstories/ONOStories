@@ -1,6 +1,6 @@
 // src/components/Testimonials.tsx
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Star } from 'lucide-react';
 
 // This is the updated data
@@ -25,7 +25,15 @@ const testimonialsData = [
   },
 ];
 
-const TestimonialCard = ({ name, role, text, rating, index }) => {
+type TestimonialCardProps = {
+  name: string;
+  role: string;
+  text: string;
+  rating: number;
+  index: number;
+};
+
+const TestimonialCard = ({ name, role, text, rating, index }: TestimonialCardProps) => {
   const [isAppearing, setIsAppearing] = useState(false);
 
   useEffect(() => {

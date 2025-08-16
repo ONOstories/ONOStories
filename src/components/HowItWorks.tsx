@@ -1,9 +1,9 @@
 "use client";
 import { twMerge } from "tailwind-merge";
 import { TracingBeam } from "./ui/tracing-beam";
-import uploadImg from "/public/upload.png";
-import chooseGenreImg from "/public/choose genre.png";
-import downloadStoryImg from "/public/download story.png";
+import uploadImg from "/upload.png";
+import chooseGenreImg from "/choose genre.png";
+import downloadStoryImg from "/download story.png";
 /** Landing-page explainer with a full-height tracing beam */
 export function HowItWorks() {
   return (
