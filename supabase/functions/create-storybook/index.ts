@@ -4,158 +4,157 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.43.4";
 import { PDFDocument, rgb } from "https://esm.sh/pdf-lib@1.17.1";
 import { corsHeaders } from "../_shared/cors.ts";
+import OpenAI from "https://deno.land/x/openai@v4.20.1/mod.ts";       // OpenAI SDK
 
-// The main function that handles requests
+/* ----------------------------------------------------------------- */
+/* 1.  CONFIG & HELPERS                                              */
+/* ----------------------------------------------------------------- */
+const SUPABASE_URL              = Deno.env.get("VITE_SUPABASE_URL")                 ?? "";
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")    ?? "";
+const GEMINI_API_KEY            = Deno.env.get("GEMINI_API_KEY");              // for narration
+const OPENAI_API_KEY            = Deno.env.get("OPENAI_API_KEY");              // for images
+if (!GEMINI_API_KEY)  throw new Error("GEMINI_API_KEY not set.");
+if (!OPENAI_API_KEY)  throw new Error("OPENAI_API_KEY not set.");
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+const openai   = new OpenAI({ apiKey: OPENAI_API_KEY });
+
+/* ----------------------------------------------------------------- */
+/* 2.  MAIN EDGE FUNCTION                                            */
+/* ----------------------------------------------------------------- */
 serve(async (req) => {
-  console.log("--- Create-storybook function invoked! ---");
+  console.log("--- Create-storybook invoked ---");
 
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    // 1. INITIAL SETUP
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
-
-    const REPLICATE_API_KEY = Deno.env.get("REPLICATE_API_KEY");
-    if (!REPLICATE_API_KEY) {
-      throw new Error("REPLICATE_API_KEY is not set in Supabase secrets.");
-    }
-
+    /* -------------------------------------------------------------- */
+    /* Parse payload                                                  */
+    /* -------------------------------------------------------------- */
     const { storyId, userId } = await req.json();
-    if (!storyId || !userId) {
-      throw new Error("Missing storyId or userId in the request body.");
-    }
+    if (!storyId || !userId) throw new Error("storyId or userId missing.");
 
-    console.log(`[STORY: ${storyId}] Starting storybook creation for user: ${userId}`);
-
-    // 2. FETCH INITIAL STORY DATA
-    const { data: initialStoryData, error: fetchError } = await supabaseClient
+    /* -------------------------------------------------------------- */
+    /* Pull base story metadata                                       */
+    /* -------------------------------------------------------------- */
+    const { data: storyMeta, error: metaErr } = await supabase
       .from("stories")
-      .select("title, child_name, short_description")
+      .select("title, child_name, short_description, age, gender, genre")
       .eq("id", storyId)
       .single();
+    if (metaErr) throw metaErr;
+    if (!storyMeta) throw new Error("Story metadata not found.");
 
-    if (fetchError) throw fetchError;
-    if (!initialStoryData) throw new Error("Initial story data not found.");
-    
-    const { title, child_name, short_description } = initialStoryData;
+    const { title, child_name, short_description, age, gender, genre } = storyMeta;
 
-    // 3. GENERATE STORY CONTENT IN MEMORY
-    console.log(`[STORY: ${storyId}] Generating story content...`);
-    const generatedPages = [
+    /* -------------------------------------------------------------- */
+    /*  Ask Gemini-1.5-Pro for a 5-page JSON story                    */
+    /* -------------------------------------------------------------- */
+    console.log(`[STORY: ${storyId}] Requesting narration from Gemini…`);
+
+    const geminiPrompt = `
+      Create a 5-page children's story about a ${age}-year-old ${gender}
+      named ${child_name}. Genre: ${genre}. Core idea: "${short_description}".
+      Return raw JSON **array** of 5 objects with keys:
+        "content"              – narration (≤100 words)
+        "illustration_prompt"  – prompt for an image generator
+      Example item:
       {
-        page_number: 1,
-        content: `Once upon a time, a brave child named ${child_name} decided to go on an adventure based on this idea: "${short_description}".`,
-        illustration_prompt: `A cute child named ${child_name} looking excited at the start of an adventure, vibrant children's storybook illustration style.`
-      },
-      {
-        page_number: 2,
-        content: `${child_name} journeyed through a magical forest and met a friendly talking squirrel.`,
-        illustration_prompt: `The child ${child_name} talking to a friendly squirrel on a tree branch in a magical, glowing forest, simple cartoon style.`
-      },
-      {
-        page_number: 3,
-        content: `Together, they discovered a hidden treasure chest filled with sparkling candies and toys.`,
-        illustration_prompt: `The child ${child_name} and a squirrel opening a glowing treasure chest full of candy, joyous and colorful.`
+        "content": "....",
+        "illustration_prompt": "...."
       }
-    ];
-    console.log(`[STORY: ${storyId}] Story content generated.`);
+    `.trim();
 
-    // 4. IMAGE GENERATION & PDF CREATION
-    const pdfDoc = await PDFDocument.create();
-
-    for (let i = 0; i < generatedPages.length; i++) {
-      const page = generatedPages[i];
-      console.log(`[STORY: ${storyId}] Generating image for page ${i + 1} with Replicate...`);
-
-      const startResponse = await fetch("https://api.replicate.com/v1/predictions", {
+    const geminiResp = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=${GEMINI_API_KEY}`,
+      {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Token ${REPLICATE_API_KEY}`
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          // *** CRITICAL FIX: Updated to the latest correct version hash for SDXL ***
-          version: "39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
-          input: { prompt: page.illustration_prompt }
+          contents: [{ parts: [{ text: geminiPrompt }] }],
+          generationConfig: { response_mime_type: "application/json" },
         }),
-      });
-
-      let prediction = await startResponse.json();
-      if (startResponse.status !== 201) {
-        throw new Error(`Replicate API failed to start prediction: ${prediction.detail}`);
-      }
-
-      while (prediction.status !== "succeeded" && prediction.status !== "failed") {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        const pollResponse = await fetch(prediction.urls.get, {
-          headers: {
-            "Authorization": `Token ${REPLICATE_API_KEY}`,
-            "Content-Type": "application/json",
-          }
-        });
-        prediction = await pollResponse.json();
-        console.log(`[STORY: ${storyId}] Polling Replicate... status: ${prediction.status}`);
-      }
-
-      if (prediction.status === "failed") {
-        throw new Error(`Replicate image generation failed: ${prediction.error}`);
-      }
-
-      const imageUrl = prediction.output[0];
-      const imageResponse = await fetch(imageUrl);
-      const imageBytes = await imageResponse.arrayBuffer();
-      const embeddedImage = await pdfDoc.embedPng(imageBytes);
-
-      const pdfPage = pdfDoc.addPage();
-      const { width, height } = pdfPage.getSize();
-      
-      pdfPage.drawImage(embeddedImage, {
-        x: 50, y: height / 2, width: width - 100, height: height / 2 - 50,
-      });
-
-      pdfPage.drawText(page.content, {
-        x: 50, y: 50, size: 14, color: rgb(0, 0, 0), maxWidth: width - 100, lineHeight: 20,
-      });
-
-      console.log(`[STORY: ${storyId}] Successfully added page ${i + 1} to PDF.`);
+      },
+    );
+    if (!geminiResp.ok) {
+      const body = await geminiResp.text();
+      throw new Error(`Gemini error ${geminiResp.status}: ${body}`);
     }
 
-    // 5. SAVE AND UPLOAD THE FINAL PDF
-    const pdfBytes = await pdfDoc.save();
-    const pdfFileName = `${title.replace(/\s+/g, '_')}_${storyId}.pdf`;
-    const filePath = `${userId}/${pdfFileName}`;
+    const geminiJson = await geminiResp.json();
+    const pages = JSON.parse(geminiJson.candidates[0].content.parts.text); // 5 pages
+    console.log(`[STORY: ${storyId}] Narration received.`);
 
-    const { error: uploadError } = await supabaseClient.storage
-      .from("story_pdfs")
-      .upload(filePath, pdfBytes, {
-        contentType: "application/pdf",
-        upsert: true,
+    /* -------------------------------------------------------------- */
+    /*  Build PDF, one page at a time                                */
+    /* -------------------------------------------------------------- */
+    const pdf = await PDFDocument.create();
+
+    for (const [idx, page] of pages.entries()) {
+      console.log(`[STORY: ${storyId}] Generating DALL·E image for page ${idx + 1}…`);
+
+      /* --- DALL·E 2 image ---------------------------------------- */
+      const imgResp = await openai.images.generate({
+        model: "dall-e-2",
+        prompt: `${page.illustration_prompt}, children's storybook illustration, vibrant colors`,
+        n: 1,
+        size: "1024x1024",
+      });
+      const imgUrl   = imgResp.data[0].url;
+      const imgBytes = await (await fetch(imgUrl)).arrayBuffer();
+      const embedded = await pdf.embedPng(imgBytes);
+
+      /* --- Add to PDF -------------------------------------------- */
+      const pdfPage = pdf.addPage();
+      const { width, height } = pdfPage.getSize();
+
+      pdfPage.drawImage(embedded, {
+        x: 50,
+        y: height / 2,
+        width: width - 100,
+        height: height / 2 - 50,
+      });
+      pdfPage.drawText(page.content, {
+        x: 50,
+        y: 50,
+        size: 14,
+        color: rgb(0, 0, 0),
+        maxWidth: width - 100,
+        lineHeight: 20,
       });
 
-    if (uploadError) throw uploadError;
+      console.log(`[STORY: ${storyId}] Page ${idx + 1} added.`);
+    }
 
-    const { data: urlData } = supabaseClient.storage
+    /* -------------------------------------------------------------- */
+    /*  Save & upload PDF                                            */
+    /* -------------------------------------------------------------- */
+    const bytes     = await pdf.save();
+    const fileName  = `${title.replace(/\s+/g, "_")}_${storyId}.pdf`;
+    const filePath  = `${userId}/${fileName}`;
+
+    const { error: upErr } = await supabase.storage
       .from("story_pdfs")
-      .getPublicUrl(filePath);
+      .upload(filePath, bytes, { contentType: "application/pdf", upsert: true });
+    if (upErr) throw upErr;
 
-    console.log(`[STORY: ${storyId}] Storybook PDF successfully created and uploaded.`);
+    const { data: urlData } = supabase.storage.from("story_pdfs").getPublicUrl(filePath);
+    console.log(`[STORY: ${storyId}] PDF stored.`);
 
-    // 6. RETURN THE PUBLIC URL
-    return new Response(JSON.stringify({ pdfUrl: urlData.publicUrl }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
-
-  } catch (error) {
-    console.error("Error in create-storybook function:", error.message);
-    return new Response(JSON.stringify({ error: error.message }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
+    /* -------------------------------------------------------------- */
+    /*  Return public URL                                            */
+    /* -------------------------------------------------------------- */
+    return new Response(
+      JSON.stringify({ pdfUrl: urlData.publicUrl }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 },
+    );
+  } catch (err) {
+    console.error("Create-storybook error:", err);
+    return new Response(
+      JSON.stringify({ error: err.message }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 },
+    );
   }
 });
