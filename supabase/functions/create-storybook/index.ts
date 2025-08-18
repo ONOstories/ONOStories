@@ -76,7 +76,7 @@ serve(async (req) => {
       You are an expert children's story author. Create a children’s story that centers on the photo the user uploads.
       Generate a 5-page story based on these details.
       Output ONLY a valid JSON array of 5 objects. Each object must have two keys: "narration" (string, <=100 words) and "illustration_prompt" (string).
-      For each "illustration_prompt", describe a scene suitable for a 3D animated movie, focusing on character emotion and action.
+      For each "illustration_prompt", describe a scene suitable for a simple children's storybook, focusing on character emotion and action.
       Every generated illustration must feature an animated version of the same child, closely matching the child’s facial features, hairstyle, and clothing style from the photo.
       Maintain the child’s outfit colors and overall color palette consistently across all pages so the PDF feels visually unified.
       Details -> Name: ${child_name}, Age: ${age}, Gender: ${gender}, Title: ${title}, Genre: ${genre}, Description: ${short_description}`;
@@ -108,7 +108,7 @@ serve(async (req) => {
     const imagePromises = storyPages.map(page =>
       openai.images.generate({
         model: "dall-e-2",
-        prompt: `${page.illustration_prompt}, in a charming 3D animated style like a Pixar movie, soft cinematic lighting, vibrant colors, digital illustration.`,
+        prompt: `${page.illustration_prompt}, in a simple and charming children's storybook illustration style, flat colors, clean lines, friendly and inviting, digital illustration. Ensure the character's appearance, including facial features, hair, and clothing, remains consistent across all illustrations.`,
         n: 1,
         size: "512x512",
         response_format: "url",
