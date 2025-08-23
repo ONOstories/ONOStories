@@ -7,6 +7,7 @@ import { CreateStories } from "./components/CreateStories";
 import  StoryLibrary  from "./components/StoryLibrary";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import { EmailConfirmed } from './components/pages/EmailConfirmed';
+import StoryLoading from '../src/components/StoryLoading.tsx';
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
           {/* Protected Route for Create Stories */}
           <Route element={<ProtectedRoute allowedRoles={['prouser']} />}>
             <Route path="/create-stories" element={<CreateStories />} />
+            <Route path="/creating-story" element={<StoryLoading />} />
           </Route>
 
         </Routes>

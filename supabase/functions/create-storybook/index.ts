@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { PDFDocument, rgb, StandardFonts } from "https://esm.sh/pdf-lib@1.17.1";
+import { PDFDocument, rgb } from "https://esm.sh/pdf-lib@1.17.1";
 import { OpenAI } from "https://esm.sh/openai@4.10.0";
 import { corsHeaders } from "../_shared/cors.ts";
 
@@ -16,13 +16,12 @@ interface StoryPage {
   illustration_prompt: string;
 }
 
-// Helper to update the story's status and log progress
+// Helper to update the story's status
 async function updateStoryStatus(supabase: SupabaseClient, storyId: string, status: 'processing' | 'complete' | 'failed', pdfUrl?: string, errorMessage?: string) {
   console.log(`[STORY ID: ${storyId}] Attempting to update status to: ${status}`);
   const updates: { status: string; pdf_url?: string; short_description?: string } = { status };
   if (pdfUrl) updates.pdf_url = pdfUrl;
   if (errorMessage) updates.short_description = `Error: ${errorMessage.substring(0, 450)}`;
-
 
   const { error } = await supabase.from('stories').update(updates).eq('id', storyId);
   if (error) {
@@ -46,15 +45,14 @@ serve(async (req) => {
   try {
     console.log("--- Create-storybook function invoked ---");
     const { storyId: reqStoryId } = await req.json();
-    storyId = reqStoryId; // Assign to outer scope for error handling
+    storyId = reqStoryId;
 
     if (!storyId) {
       throw new Error("Missing 'storyId' in the request body.");
     }
     console.log(`[STORY ID: ${storyId}] Received request.`);
 
-    // STEP 1: Fetch the existing story record from the database
-    console.log(`[STORY ID: ${storyId}] Fetching story details from the database...`);
+    // STEP 1: Fetch story record
     const { data: storyRecord, error: fetchError } = await supabaseAdmin
       .from('stories')
       .select('*')
@@ -62,26 +60,21 @@ serve(async (req) => {
       .single();
 
     if (fetchError || !storyRecord) {
-      console.error(`Database fetch error for story ID ${storyId}:`, fetchError?.message);
       throw new Error(`Failed to fetch story record: ${fetchError?.message}`);
     }
 
-    console.log(`[STORY ID: ${storyId}] Successfully fetched story details.`);
-    await updateStoryStatus(supabaseAdmin, storyId, 'processing');
-
+    // Correctly call updateStoryStatus with undefined for optional args
+    await updateStoryStatus(supabaseAdmin, storyId, 'processing', undefined, undefined);
     const { user_id, title, child_name, gender, age, genre, short_description } = storyRecord;
 
     // STEP 2: Generate story content with Gemini
     const geminiPrompt = `
-      You are an expert children's story author. Create a children’s story that centers on the photo the user uploads.
-      Generate a 5-page story based on these details.
-      Output ONLY a valid JSON array of 5 objects. Each object must have two keys: "narration" (string, <=100 words) and "illustration_prompt" (string).
-      For each "illustration_prompt", describe a scene suitable for a simple children's storybook, focusing on character emotion and action.
-      Every generated illustration must feature an animated version of the same child, closely matching the child’s facial features, hairstyle, and clothing style from the photo.
-      Maintain the child’s outfit colors and overall color palette consistently across all pages so the PDF feels visually unified.
+      You are an expert children's story author. Create a simple, heartwarming 5-page children’s story.
+      Output ONLY a valid JSON array of 5 objects. Each object must have "narration" (string, <=100 words) and "illustration_prompt" (string).
+      For each "illustration_prompt", describe a scene in a charming 3D Pixar style, focusing on the character's emotion and the setting.
+      Ensure every illustration features the same child character consistently.
       Details -> Name: ${child_name}, Age: ${age}, Gender: ${gender}, Title: ${title}, Genre: ${genre}, Description: ${short_description}`;
 
-    console.log(`[STORY ID: ${storyId}] Sending prompt to Gemini.`);
     const geminiResponse = await fetch(geminiApiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -90,71 +83,86 @@ serve(async (req) => {
         generationConfig: { responseMimeType: "application/json" }
       })
     });
-
-    if (!geminiResponse.ok) {
-        const errorBody = await geminiResponse.text();
-        throw new Error(`Gemini API error: ${geminiResponse.status} ${errorBody}`);
-    }
+    if (!geminiResponse.ok) throw new Error(`Gemini API error: ${await geminiResponse.text()}`);
 
     const geminiResult = await geminiResponse.json();
     const storyText = geminiResult.candidates[0]?.content?.parts[0]?.text;
     if (!storyText) throw new Error("Gemini response was empty or malformed.");
-    
-    const storyPages: StoryPage[] = JSON.parse(storyText);
-    console.log(`[STORY ID: ${storyId}] Story JSON received from Gemini.`);
 
-    // STEP 3: Generate Illustrations with DALL-E
-    console.log(`[STORY ID: ${storyId}] Generating 5 images with DALL-E.`);
+    const storyPages: StoryPage[] = JSON.parse(storyText);
+    console.log(`[STORY ID: ${storyId}] Story JSON received.`);
+
+    // STEP 3: Generate Illustrations with DALL-E 3
     const imagePromises = storyPages.map(page =>
       openai.images.generate({
         model: "dall-e-2",
-        prompt: `${page.illustration_prompt}, in a simple and charming children's storybook illustration style, flat colors, clean lines, friendly and inviting, digital illustration. Ensure the character's appearance, including facial features, hair, and clothing, remains consistent across all illustrations.`,
+        prompt: `A children's storybook illustration of ${page.illustration_prompt}. Style: charming 3D Pixar animation style, soft lighting, expressive character, cinematic high detail. The character's appearance must be consistent across all images.`,
         n: 1,
         size: "512x512",
+        quality: "standard",
         response_format: "url",
       })
     );
     const imageResponses = await Promise.all(imagePromises);
     const imageUrls = imageResponses.map(res => res.data[0]?.url).filter((url): url is string => !!url);
-    if (imageUrls.length !== 5) throw new Error("DALL-E failed to generate all 5 images.");
-    console.log(`[STORY ID: ${storyId}] 5 images generated successfully.`);
+    if (imageUrls.length !== 5) throw new Error("DALL-E 3 failed to generate all 5 images.");
+    console.log(`[STORY ID: ${storyId}] Images generated.`);
 
-    // STEP 4: Create PDF
-    console.log(`[STORY ID: ${storyId}] Creating PDF in memory.`);
+    // STEP 4: Create PDF with Custom Font from URL
     const pdfDoc = await PDFDocument.create();
-    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+    // !!! IMPORTANT: PASTE THE PUBLIC URL OF YOUR FONT FROM SUPABASE STORAGE HERE !!!
+    const fontUrl = 'https://ytigoauzuwnfkfxoglkp.supabase.co/storage/v1/object/public/assets/NewEraCasualBold.ttf';
+
+    const fontBytes = await fetch(fontUrl).then(res => res.arrayBuffer());
+    const customFont = await pdfDoc.embedFont(fontBytes);
+
     for (let i = 0; i < 5; i++) {
         const page = pdfDoc.addPage();
         const { width, height } = page.getSize();
         const imageBytes = await fetch(imageUrls[i]).then(res => res.arrayBuffer());
         const embeddedImage = await pdfDoc.embedPng(imageBytes);
-        const imgDims = embeddedImage.scaleToFit(width - 100, height - 250);
-        page.drawImage(embeddedImage, { x: (width - imgDims.width) / 2, y: height - imgDims.height - 50, width: imgDims.width, height: imgDims.height });
-        page.drawText(storyPages[i].narration, { x: 50, y: 120, font, size: 16, lineHeight: 24, color: rgb(0.1, 0.1, 0.1), maxWidth: width - 100 });
+        
+        const imgDims = embeddedImage.scaleToFit(width - 100, height - 280);
+
+        page.drawImage(embeddedImage, {
+            x: (width - imgDims.width) / 2,
+            y: height - imgDims.height - 60,
+            width: imgDims.width,
+            height: imgDims.height
+        });
+
+        page.drawText(storyPages[i].narration, {
+            x: 50,
+            y: 100,
+            font: customFont,
+            size: 18,
+            lineHeight: 26,
+            color: rgb(0.1, 0.1, 0.1),
+            maxWidth: width - 100
+        });
     }
     const pdfBytes = await pdfDoc.save();
     console.log(`[STORY ID: ${storyId}] PDF created successfully.`);
 
     // STEP 5: Upload PDF to Supabase Storage
     const filePath = `${user_id}/${storyId}.pdf`;
-    console.log(`[STORY ID: ${storyId}] Uploading PDF to storage at path: ${filePath}`);
     const { error: uploadError } = await supabaseAdmin.storage.from("storybooks").upload(filePath, pdfBytes, { contentType: "application/pdf", upsert: true });
     if (uploadError) throw uploadError;
-    
+
     const { data: { publicUrl } } = supabaseAdmin.storage.from("storybooks").getPublicUrl(filePath);
-    console.log(`[STORY ID: ${storyId}] PDF uploaded successfully. Public URL: ${publicUrl}`);
 
-    // STEP 6: Final status update to 'complete'
-    await updateStoryStatus(supabaseAdmin, storyId, 'complete', publicUrl);
+    // STEP 6: Final status update
+    await updateStoryStatus(supabaseAdmin, storyId, 'complete', publicUrl, undefined);
 
-    // STEP 7: Return the final URL to the frontend
+    // STEP 7: Return final URL
     return new Response(JSON.stringify({ success: true, pdfUrl: publicUrl }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200
     });
 
   } catch (error) {
-    console.error(`[STORY ID: ${storyId ?? 'Unknown'}] CRITICAL ERROR in function execution:`, error.message);
+    console.error(`[STORY ID: ${storyId ?? 'Unknown'}] CRITICAL ERROR:`, error.message);
     if (storyId) {
         await updateStoryStatus(supabaseAdmin, storyId, 'failed', undefined, error.message);
     }
