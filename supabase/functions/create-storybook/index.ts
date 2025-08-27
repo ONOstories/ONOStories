@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { PDFDocument, rgb } from "https://esm.sh/pdf-lib@1.17.1";
 import { OpenAI } from "https://esm.sh/openai@4.10.0";
+import fontkit from 'https://esm.sh/@pdf-lib/fontkit@1.1.1'; // <-- STEP 1: Import fontkit
 import { corsHeaders } from "../_shared/cors.ts";
 
 // Initialize AI clients
@@ -63,7 +64,6 @@ serve(async (req) => {
       throw new Error(`Failed to fetch story record: ${fetchError?.message}`);
     }
 
-    // Correctly call updateStoryStatus with undefined for optional args
     await updateStoryStatus(supabaseAdmin, storyId, 'processing', undefined, undefined);
     const { user_id, title, child_name, gender, age, genre, short_description } = storyRecord;
 
@@ -92,26 +92,27 @@ serve(async (req) => {
     const storyPages: StoryPage[] = JSON.parse(storyText);
     console.log(`[STORY ID: ${storyId}] Story JSON received.`);
 
-    // STEP 3: Generate Illustrations with DALL-E 3
+    // STEP 3: Generate Illustrations with DALL-E 2 at 512x512
     const imagePromises = storyPages.map(page =>
       openai.images.generate({
         model: "dall-e-2",
-        prompt: `A children's storybook illustration of ${page.illustration_prompt}. Style: charming 3D Pixar animation style, soft lighting, expressive character, cinematic high detail. The character's appearance must be consistent across all images.`,
+        prompt: `A children's storybook illustration of ${page.illustration_prompt}. Style: charming 3D animation style, soft lighting.`,
         n: 1,
         size: "512x512",
-        quality: "standard",
         response_format: "url",
       })
     );
     const imageResponses = await Promise.all(imagePromises);
     const imageUrls = imageResponses.map(res => res.data[0]?.url).filter((url): url is string => !!url);
-    if (imageUrls.length !== 5) throw new Error("DALL-E 3 failed to generate all 5 images.");
+    if (imageUrls.length !== 5) throw new Error("DALL-E 2 failed to generate all 5 images.");
     console.log(`[STORY ID: ${storyId}] Images generated.`);
 
     // STEP 4: Create PDF with Custom Font from URL
     const pdfDoc = await PDFDocument.create();
+    
+    // <-- STEP 2: Register fontkit
+    pdfDoc.registerFontkit(fontkit);
 
-    // !!! IMPORTANT: PASTE THE PUBLIC URL OF YOUR FONT FROM SUPABASE STORAGE HERE !!!
     const fontUrl = 'https://ytigoauzuwnfkfxoglkp.supabase.co/storage/v1/object/public/assets/NewEraCasualBold.ttf';
 
     const fontBytes = await fetch(fontUrl).then(res => res.arrayBuffer());
