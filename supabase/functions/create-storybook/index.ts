@@ -1,8 +1,9 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+// --- THIS LINE IS CORRECTED ---
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { PDFDocument, rgb } from "https://esm.sh/pdf-lib@1.17.1";
 import { OpenAI } from "https://esm.sh/openai@4.10.0";
-import fontkit from 'https://esm.sh/@pdf-lib/fontkit@1.1.1'; // <-- STEP 1: Import fontkit
+import fontkit from 'https://esm.sh/@pdf-lib/fontkit@1.1.1';
 import { corsHeaders } from "../_shared/cors.ts";
 
 // Initialize AI clients
@@ -71,7 +72,7 @@ serve(async (req) => {
     const geminiPrompt = `
       You are an expert children's story author. Create a simple, heartwarming 5-page children’s story.
       Output ONLY a valid JSON array of 5 objects. Each object must have "narration" (string, <=100 words) and "illustration_prompt" (string).
-      For each "illustration_prompt", describe a scene in a charming 3D Pixar style, focusing on the character's emotion and the setting.
+      For each "illustration_prompt", describe a scene that embodies: clean line-work, soft yet vibrant colors, gently stylized, slightly exaggerated forms, to create a playful, storybook feel. Focus on the child character's emotion and the setting.
       Ensure every illustration features the same child character consistently.
       Details -> Name: ${child_name}, Age: ${age}, Gender: ${gender}, Title: ${title}, Genre: ${genre}, Description: ${short_description}`;
 
@@ -92,11 +93,11 @@ serve(async (req) => {
     const storyPages: StoryPage[] = JSON.parse(storyText);
     console.log(`[STORY ID: ${storyId}] Story JSON received.`);
 
-    // STEP 3: Generate Illustrations with DALL-E 2 at 512x512
+    // STEP 3: Generate Illustrations with DALL-E 2 with new styling
     const imagePromises = storyPages.map(page =>
       openai.images.generate({
         model: "dall-e-2",
-        prompt: `A children's storybook illustration of ${page.illustration_prompt}. Style: charming 3D animation style, soft lighting.`,
+        prompt: `${page.illustration_prompt}. Style: clean line-work, soft yet vibrant colors, and gently stylized, slightly exaggerated forms to create a playful, storybook feel.The character's appearance must be consistent across all images.`,
         n: 1,
         size: "512x512",
         response_format: "url",
@@ -107,16 +108,19 @@ serve(async (req) => {
     if (imageUrls.length !== 5) throw new Error("DALL-E 2 failed to generate all 5 images.");
     console.log(`[STORY ID: ${storyId}] Images generated.`);
 
-    // STEP 4: Create PDF with Custom Font from URL
+    // STEP 4: Create PDF with Custom Font and Logo
     const pdfDoc = await PDFDocument.create();
-    
-    // <-- STEP 2: Register fontkit
     pdfDoc.registerFontkit(fontkit);
 
     const fontUrl = 'https://ytigoauzuwnfkfxoglkp.supabase.co/storage/v1/object/public/assets/NewEraCasualBold.ttf';
-
     const fontBytes = await fetch(fontUrl).then(res => res.arrayBuffer());
     const customFont = await pdfDoc.embedFont(fontBytes);
+
+    // --- Embed the logo once outside the loop ---
+    const logoUrl = 'https://ytigoauzuwnfkfxoglkp.supabase.co/storage/v1/object/public/assets/ono_stories_logo.jpg';
+    const logoImageBytes = await fetch(logoUrl).then(res => res.arrayBuffer());
+    const embeddedLogo = await pdfDoc.embedJpg(logoImageBytes);
+    const logoDims = embeddedLogo.scale(0.1);
 
     for (let i = 0; i < 5; i++) {
         const page = pdfDoc.addPage();
@@ -126,6 +130,7 @@ serve(async (req) => {
         
         const imgDims = embeddedImage.scaleToFit(width - 100, height - 280);
 
+        // Draw main illustration
         page.drawImage(embeddedImage, {
             x: (width - imgDims.width) / 2,
             y: height - imgDims.height - 60,
@@ -133,6 +138,15 @@ serve(async (req) => {
             height: imgDims.height
         });
 
+        // Draw logo in the top right corner
+        page.drawImage(embeddedLogo, {
+            x: width - logoDims.width - 50,
+            y: height - logoDims.height - 30,
+            width: logoDims.width,
+            height: logoDims.height,
+        });
+
+        // Draw text below the image
         page.drawText(storyPages[i].narration, {
             x: 50,
             y: 100,
