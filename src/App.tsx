@@ -8,6 +8,8 @@ import  StoryLibrary  from "./components/StoryLibrary";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import { EmailConfirmed } from './components/pages/EmailConfirmed';
 import StoryLoading from '../src/components/StoryLoading.tsx';
+import StorybookGem from "./components/pages/StorybookGem";
+
 
 function App() {
   return (
@@ -19,6 +21,7 @@ function App() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/story-library" element={<StoryLibrary />} />
+          <Route path="/story/:storyId" element={<StorybookGem />} />
           <Route path="/email-confirmed" element={<EmailConfirmed />} />   
           {/* Protected Route for Create Stories */}
           <Route element={<ProtectedRoute allowedRoles={['prouser']} />}>
