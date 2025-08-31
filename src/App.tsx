@@ -8,6 +8,7 @@ import  StoryLibrary  from "./components/StoryLibrary";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import { EmailConfirmed } from './components/pages/EmailConfirmed';
 import StoryLoading from '../src/components/StoryLoading.tsx';
+import { AboutUs } from "./components/pages/AboutUs";
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
           <Route path="/story-library" element={<StoryLibrary />} />
           <Route path="/email-confirmed" element={<EmailConfirmed />} />   
           {/* Protected Route for Create Stories */}
+          <Route path="/about" element={<AboutUs />} />
           <Route element={<ProtectedRoute allowedRoles={['prouser']} />}>
             <Route path="/create-stories" element={<CreateStories />} />
             <Route path="/creating-story" element={<StoryLoading />} />

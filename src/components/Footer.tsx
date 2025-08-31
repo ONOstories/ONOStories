@@ -7,7 +7,7 @@ import logo from '../assets/ONOstories_logo.jpg';
 
 export function Footer() {
   return (
-    <footer className="new_footer_area">
+    <footer className="new_footer_area" style={{ background: 'linear-gradient(135deg, #e0c3fc 0%, #f9c6e0 40%, #f7b267 80%, #f3e7fe 100%)' }}>
       <div className="new_footer_top">
         <div className="container mx-auto px-6 lg:px-8 relative z-10">
           
@@ -32,10 +32,10 @@ export function Footer() {
             <div className="text-left lg:text-center">
               <h3 className="f-title">Quick Links</h3>
               <ul className="f_list">
-                <li><a href="#">Home</a></li>
-                <li><a href="#">How It Works</a></li>
-                <li><a href="#">Features</a></li>
-                <li><a href="#">Pricing</a></li>
+                <li><Link to="/">Home</Link></li>
+                <li><Link to="/about">About Us</Link></li>
+                <li><Link to="/story-library">Story Library</Link></li>
+                <li><Link to="/pricing">Pricing</Link></li>
               </ul>
             </div>
 

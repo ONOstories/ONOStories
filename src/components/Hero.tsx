@@ -123,7 +123,7 @@ export function Hero() {
 
         <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
           <button
-            onClick={() => navigate('/login')}
+            onClick={() => navigate('/create-stories')}
             className="flex items-center space-x-2 rounded-full bg-gradient-to-r from-[#9333EA] to-[#DB2777] px-8 py-4 text-base font-semibold text-white shadow-lg transition-all hover:scale-105 hover:from-[#7E22CE] hover:to-[#BE185D] md:text-lg"
           >
             <span>Get Started</span>

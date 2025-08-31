@@ -1,0 +1,291 @@
+/* src/components/pages/AboutUs.css */
+
+/* Define a color palette for consistency */
+:root {
+  --ono-purple: #9333EA;
+  --ono-pink: #DB2777;
+  --ono-orange: #F7B267;
+  --ono-deep-purple: #4C1D95;
+  --ono-text: #333;
+  --ono-background: linear-gradient(145deg, #fdf6ff 0%, #fff0f9 50%, #fff9f0 100%);
+  --font-main: 'Poppins', sans-serif;
+}
+
+.about-us-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--ono-background);
+  font-family: var(--font-main);
+}
+
+.about-us-main-content {
+  flex-grow: 1;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 6rem 1.5rem 4rem; 
+  width: 100%;
+}
+
+/* --- General Section Styling --- */
+.about-hero-section, .about-mission-section, .why-we-started-section, .back-home-link-container {
+  margin-bottom: 5rem;
+  text-align: center;
+}
+
+.about-section-title {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: var(--ono-purple);
+  margin-bottom: 1.5rem;
+  position: relative;
+  display: inline-block;
+}
+
+.about-section-title::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70%;
+  height: 4px;
+  background: linear-gradient(90deg, var(--ono-purple), var(--ono-pink));
+  border-radius: 2px;
+}
+
+.about-section-paragraph {
+  color: var(--ono-deep-purple);
+  font-size: 1.1rem;
+  line-height: 1.7;
+  max-width: 750px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 1.5rem;
+}
+
+/* --- Hero Section --- */
+.about-logo {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  margin: 0 auto 1.5rem;
+  box-shadow: 0 8px 32px rgba(147, 51, 234, 0.25);
+  border: 4px solid white;
+}
+
+.about-main-title {
+  font-size: clamp(2.5rem, 5vw, 3.5rem);
+  font-weight: 800;
+  color: var(--ono-deep-purple);
+  margin-bottom: 1rem;
+  background: linear-gradient(90deg, var(--ono-purple), var(--ono-pink));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.about-main-subtitle {
+  font-size: 1.25rem;
+  color: var(--ono-deep-purple);
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+/* --- Mission Section --- */
+.story-types-container {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.story-badge {
+  color: white;
+  border-radius: 999px;
+  padding: 0.6rem 1.5rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.story-badge:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.badge-bedtime { background: linear-gradient(90deg, var(--ono-purple), var(--ono-pink)); }
+.badge-moral { background: linear-gradient(90deg, var(--ono-pink), var(--ono-orange)); }
+.badge-educational { background: linear-gradient(90deg, var(--ono-orange), var(--ono-purple)); }
+
+/* --- Why We Started Section --- */
+.why-we-started-section.expanded-layout {
+  display: block;
+  background: white;
+  padding: 3rem;
+  border-radius: 24px;
+  box-shadow: 0 16px 40px rgba(147, 51, 234, 0.1);
+  text-align: center;
+}
+
+.why-we-started-text { 
+  width: 100%;
+}
+
+.why-we-started-section .about-section-title { 
+  font-size: 2rem; 
+}
+
+.why-we-started-section .about-section-title.alt::after { 
+  background: linear-gradient(90deg, var(--ono-orange), var(--ono-pink)); 
+}
+
+.why-we-started-section .about-section-paragraph { 
+  margin-left: auto; 
+  margin-right: auto; 
+}
+
+/* --- Founder Section --- */
+.founder-section-split {
+  display: flex;
+  align-items: center;
+  background: white;
+  border-radius: 24px;
+  box-shadow: 0 16px 40px rgba(147, 51, 234, 0.1);
+  overflow: hidden;
+  margin-bottom: 5rem;
+  min-height: 500px;
+}
+
+.founder-image-container {
+  flex: 1;
+  align-self: stretch;
+}
+
+.founder-split-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.founder-split-image:hover {
+  transform: scale(1.05);
+}
+
+.founder-details-container {
+  flex: 1;
+  padding: 3rem 4rem;
+  text-align: left;
+}
+
+.founder-details-container .about-section-title {
+  text-align: left;
+  margin-bottom: 0.5rem;
+}
+
+.founder-details-container .about-section-title::after {
+  left: 0;
+  transform: translateX(0);
+}
+
+.founder-details-container .founder-name {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--ono-purple);
+  margin-bottom: 1rem;
+}
+
+.founder-details-container .founder-bio {
+  color: var(--ono-deep-purple);
+  margin-bottom: 2rem;
+  line-height: 1.7;
+}
+
+.founder-socials {
+  display: flex;
+  justify-content: flex-start;
+  gap: 1rem;
+}
+
+.social-button {
+  color: white;
+  border-radius: 999px;
+  padding: 0.6rem 1.5rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.social-button:hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
+.social-button.twitter { background: #1DA1F2; }
+.social-button.linkedin { background: #0A66C2; }
+
+
+/* --- Back Home Link --- */
+.back-home-link-container {
+    margin-top: 1rem;
+}
+
+.back-home-link {
+  background: linear-gradient(90deg, var(--ono-purple), var(--ono-pink));
+  color: white;
+  border-radius: 50px;
+  padding: 1rem 2.5rem;
+  font-weight: 700;
+  font-size: 1.1rem;
+  text-decoration: none;
+  box-shadow: 0 8px 25px rgba(219, 39, 119, 0.3);
+  transition: all 0.3s ease;
+  display: inline-block;
+}
+
+.back-home-link:hover {
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 12px 30px rgba(219, 39, 119, 0.4);
+}
+
+
+/* --- Responsive Design --- */
+@media (max-width: 900px) {
+  .founder-section-split {
+    flex-direction: column;
+  }
+  .founder-details-container {
+    padding: 2.5rem;
+    text-align: center;
+  }
+  .founder-details-container .about-section-title {
+    text-align: center;
+  }
+  .founder-details-container .about-section-title::after {
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .founder-socials {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .why-we-started-section.expanded-layout {
+    padding: 2rem;
+  }
+  
+  .about-us-main-content {
+    padding-top: 5rem;
+  }
+
+  .about-section-title {
+    font-size: 1.8rem;
+  }
+}

@@ -13,7 +13,7 @@ export function HowItWorks() {
         {/* ── HEADLINE ────────────────────────────── */}
         <header className="text-center mt-8 mb-8 md:mt-10 md:mb-10">
           <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight text-[#2E1065]">
-            How ONOStories Works
+            How ONO Stories Works
           </h2>
           <p className="mt-4 text-xl text-gray-700/90">
             Turn simple photos into an unforgettable, personalized storybook in 3 quick steps.
