@@ -13,9 +13,12 @@ interface StoryPage {
 }
 
 async function updateStory(supabase: SupabaseClient, storyId: string, updates: object) {
+  console.log(`[STORY ID: ${storyId}] Attempting to update with:`, updates);
   const { error } = await supabase.from('stories').update(updates).eq('id', storyId);
   if (error) {
     console.error(`[STORY ID: ${storyId}] FATAL: Could not update story. Reason:`, error.message);
+  } else {
+    console.log(`[STORY ID: ${storyId}] Story updated successfully.`);
   }
 }
 
@@ -28,8 +31,8 @@ serve(async (req) => {
   try {
     const { storyId: reqStoryId } = await req.json();
     storyId = reqStoryId;
-
     if (!storyId) throw new Error("Missing 'storyId' in the request body.");
+    console.log(`[STORY ID: ${storyId}] Function invoked.`);
 
     const { data: storyRecord, error: fetchError } = await supabaseAdmin.from('stories').select('*').eq('id', storyId).single();
     if (fetchError || !storyRecord) throw new Error(`Failed to fetch story record: ${fetchError?.message}`);
@@ -46,22 +49,19 @@ serve(async (req) => {
     const geminiResponse = await fetch(geminiApiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: geminiPrompt }] }],
-        generationConfig: { responseMimeType: "application/json" }
-      })
+      body: JSON.stringify({ contents: [{ parts: [{ text: geminiPrompt }] }], generationConfig: { responseMimeType: "application/json" } })
     });
     if (!geminiResponse.ok) throw new Error(`Gemini API error: ${await geminiResponse.text()}`);
 
     const geminiResult = await geminiResponse.json();
     const storyText = geminiResult.candidates[0]?.content?.parts[0]?.text;
     if (!storyText) throw new Error("Gemini response was empty or malformed.");
-
+    console.log(`[STORY ID: ${storyId}] Story text generated.`);
     const storyPages: StoryPage[] = JSON.parse(storyText);
 
     const imagePromises = storyPages.map(page =>
       openai.images.generate({
-        model: "dall-e-3", // Using dall-e-3 for higher quality
+        model: "dall-e-3",
         prompt: `${page.illustration_prompt}. Style: beautiful children's book illustration with clean line-work, soft and vibrant colors, and gently stylized characters.`,
         n: 1,
         size: "1024x1024",
@@ -71,6 +71,7 @@ serve(async (req) => {
     const imageResponses = await Promise.all(imagePromises);
     const imageUrls = imageResponses.map(res => res.data[0]?.url).filter((url): url is string => !!url);
     if (imageUrls.length !== 5) throw new Error("DALL-E 3 failed to generate all 5 images.");
+    console.log(`[STORY ID: ${storyId}] Illustrations generated.`);
 
     const storybookData = storyPages.map((page, index) => ({
       narration: page.narration,
@@ -98,3 +99,4 @@ serve(async (req) => {
     });
   }
 });
+
