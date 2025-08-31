@@ -71,7 +71,9 @@ const StorybookGem = () => {
       const fontBytes = await fetch(fontUrl).then(res => res.arrayBuffer());
       const customFont = await pdfDoc.embedFont(fontBytes);
       
-      const imageFetches = story.storybook_data.map(page => fetch(page.imageUrl).then(res => res.arrayBuffer()));
+      const imageFetches = story.storybook_data.map(page => 
+        fetch(page.imageUrl).then(res => res.arrayBuffer())
+      );
       const imageBytesArray = await Promise.all(imageFetches);
 
       for (let i = 0; i < story.storybook_data.length; i++) {
@@ -100,8 +102,6 @@ const StorybookGem = () => {
       }
       
       const pdfBytes = await pdfDoc.save();
-      
-      // FIX: Use a type assertion `as any` to resolve the TypeScript error.
       const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
       const fileName = `${story.title.replace(/\s+/g, '_')}.pdf`;
       download(blob, fileName);
@@ -188,3 +188,4 @@ const StorybookGem = () => {
 };
 
 export default StorybookGem;
+
