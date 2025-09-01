@@ -55,18 +55,18 @@ export const CreateStories: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // 1. Upload photo
+      // 1. Upload photo to the 'child-photos' bucket
       const fileExt = uploadedPhoto.name.split('.').pop();
       const fileName = `${Date.now()}.${fileExt}`;
       const filePath = `${user.id}/${fileName}`;
       const { error: uploadError } = await supabase.storage.from('child-photos').upload(filePath, uploadedPhoto);
       if (uploadError) throw uploadError;
 
-      // 2. Get public URL
+      // 2. Get public URL of the uploaded photo
       const { data: { publicUrl } } = supabase.storage.from('child-photos').getPublicUrl(filePath);
       if (!publicUrl) throw new Error("Could not get public URL for the photo.");
 
-      // 3. Insert story record to get an ID
+      // 3. Insert story record with the 'photo_url'
       const { data: storyData, error: insertError } = await supabase
         .from('stories')
         .insert({
@@ -77,7 +77,7 @@ export const CreateStories: React.FC = () => {
           gender: storyForm.gender,
           genre: storyForm.genre,
           short_description: storyForm.short_description,
-          photo_url: publicUrl,
+          photo_url: publicUrl, // Save the photo URL here
           status: 'pending',
         })
         .select('id')
@@ -86,7 +86,7 @@ export const CreateStories: React.FC = () => {
       if (insertError) throw insertError;
       if (!storyData?.id) throw new Error("Failed to create story record.");
 
-      // 4. Navigate to the loading page with the new story ID
+      // 4. Navigate to the loading page, which will trigger the backend function
       navigate('/creating-story', { state: { storyId: storyData.id } });
 
     } catch (error: any) {
@@ -201,3 +201,4 @@ export const CreateStories: React.FC = () => {
     </div>
   );
 };
+
