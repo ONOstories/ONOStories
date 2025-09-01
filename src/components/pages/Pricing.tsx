@@ -1,3 +1,4 @@
+import Navbar from '../Navbar';
 
 import React, { useState } from "react";
 import { Check, Star, Hourglass } from "lucide-react";
@@ -89,7 +90,8 @@ export function Pricing() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 py-16 px-4">
+    <div className="min-h-screen py-16 px-4" style={{ background: 'linear-gradient(135deg, #f3e7fe 0%, #f9c6e0 50%, #f7b267 100%)' }}>
+      <Navbar forceSolidBackground={true} />
       {showProAnim && (
         <div className="fixed top-8 left-1/2 -translate-x-1/2 z-50">
           <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-2xl shadow-xl flex items-center space-x-4 animate-bounce">
@@ -102,12 +104,18 @@ export function Pricing() {
       <div className="max-w-8xl mx-auto">
         {/* headline */}
         <header className="text-center mb-12">
+          <br></br>
           <h1 className="text-5xl font-extrabold bg-gradient-to-r from-[#4C1D95] to-[#2E1065] bg-clip-text text-transparent">
             Choose Your Plan
           </h1>
           <p className="mt-4 text-xl text-[#4C1D95]/90 max-w-3xl mx-auto">
             Start free with demo stories, then upgrade to create unlimited personalized adventures for your child.
           </p>
+          <div className="mt-6">
+            <span className="inline-block px-6 py-2 rounded-full bg-gradient-to-r from-pink-500 to-orange-400 text-white font-bold text-lg shadow-lg animate-pulse">
+              🚀 Launch Offer: Get Pro Annual at 12% OFF! Limited Time Only!
+            </span>
+          </div>
         </header>
 
         {/* billing toggle */}

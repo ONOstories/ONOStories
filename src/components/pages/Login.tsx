@@ -54,8 +54,8 @@ export function Login() {
 
   // 3. If the check is complete and there is no user, show the login form.
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 flex items-center justify-center px-4">
-      <div className="max-w-md w-full">
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'linear-gradient(135deg, #f3e7fe 0%, #f9c6e0 50%, #f7b267 100%)' }}>
+      <div className="max-w-md w-full" style={{ boxShadow: '0 8px 32px rgba(80, 0, 80, 0.12)', borderRadius: '2rem', background: 'rgba(255,255,255,0.95)' }}>
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
             <BookOpen className="h-12 w-12 text-purple-600" />

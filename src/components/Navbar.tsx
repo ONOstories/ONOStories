@@ -1,22 +1,21 @@
-// src/components/Navbar.tsx
-
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthProvider";
 import { Lock } from "lucide-react";
 import logo from '../assets/ONOstories_logo.jpg'; 
 
-const Navbar = () => {
+type NavbarProps = {
+  forceSolidBackground?: boolean;
+};
+
+const Navbar = ({ forceSolidBackground = false }: NavbarProps) => {
   const { user, logout, profile, loading } = useAuth();
   const navigate = useNavigate();
   
-  // State to track whether the page has been scrolled
   const [isScrolled, setIsScrolled] = useState(false);
 
-  // Effect to add and remove a scroll event listener
   useEffect(() => {
     const handleScroll = () => {
-      // Set state to true if scrolled more than 50px, otherwise false
       if (window.scrollY > 50) {
         setIsScrolled(true);
       } else {
@@ -25,8 +24,6 @@ const Navbar = () => {
     };
 
     window.addEventListener('scroll', handleScroll);
-
-    // Cleanup function to remove the listener when the component unmounts
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
@@ -42,11 +39,12 @@ const Navbar = () => {
     navigate('/pricing');
   };
   
-  // Conditionally set the styles for links based on scroll position
+  const isSolid = isScrolled || forceSolidBackground;
+
   const linkStyle = {
-    textShadow: isScrolled ? 'none' : '1px 1px 4px rgba(0, 0, 0, 0.7)',
+    textShadow: isSolid ? 'none' : '1px 1px 4px rgba(0, 0, 0, 0.7)',
   };
-  const linkClassName = isScrolled 
+  const linkClassName = isSolid 
     ? "text-gray-700 hover:text-indigo-600" 
     : "text-white hover:text-gray-200";
 
@@ -73,12 +71,11 @@ const Navbar = () => {
       );
     }
     
-    // Auth buttons also change with scroll for consistency
     return (
       <div className="space-x-2">
         <Link 
           to="/login" 
-          className={`px-4 py-2 text-sm font-bold rounded-md transition-colors duration-300 ${isScrolled ? 'text-gray-700 bg-gray-100 hover:bg-gray-200' : 'text-white bg-black/20 hover:bg-black/30'}`}
+          className={`px-4 py-2 text-sm font-bold rounded-md transition-colors duration-300 ${isSolid ? 'text-gray-700 bg-gray-100 hover:bg-gray-200' : 'text-white bg-black/20 hover:bg-black/30'}`}
           style={linkStyle}
         >
           Login
@@ -95,8 +92,7 @@ const Navbar = () => {
   };
 
   return (
-    // Navbar classes now dynamically change based on scroll position
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-white shadow-md' : 'bg-transparent'}`}>
+    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isSolid ? 'bg-white shadow-md' : 'bg-transparent'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex-shrink-0">
@@ -112,6 +108,9 @@ const Navbar = () => {
             <Link to="/" className={`inline-flex items-center px-1 pt-1 text-sm font-bold transition-colors duration-300 ${linkClassName}`} style={linkStyle}>
               Home
             </Link>
+            <Link to="/about" className={`inline-flex items-center px-1 pt-1 text-sm font-bold transition-colors duration-300 ${linkClassName}`} style={linkStyle}>
+              About Us
+            </Link>
             <Link to="/story-library" className={`inline-flex items-center px-1 pt-1 text-sm font-bold transition-colors duration-300 ${linkClassName}`} style={linkStyle}>
               Story Library
             </Link>
@@ -120,8 +119,8 @@ const Navbar = () => {
                 Create Stories
               </Link>
             ) : (
-              <span onClick={handleCreateStoriesClick} className={`cursor-pointer inline-flex items-center px-1 pt-1 text-sm font-bold transition-colors duration-300 ${isScrolled ? 'text-gray-400' : 'text-white/70'}`} title="Only available to Pro users" style={isScrolled ? {} : linkStyle}>
-                <Lock className={`h-4 w-4 mr-1 transition-colors duration-300 ${isScrolled ? 'text-gray-400' : 'text-white/70'}`} />
+              <span onClick={handleCreateStoriesClick} className={`cursor-pointer inline-flex items-center px-1 pt-1 text-sm font-bold transition-colors duration-300 ${isSolid ? 'text-gray-400' : 'text-white/70'}`} title="Only available to Pro users" style={isSolid ? {} : linkStyle}>
+                <Lock className={`h-4 w-4 mr-1 transition-colors duration-300 ${isSolid ? 'text-gray-400' : 'text-white/70'}`} />
                 Create Stories
               </span>
             )}
