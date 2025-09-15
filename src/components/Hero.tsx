@@ -3,11 +3,11 @@
 import { useEffect, useRef } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import newHeroImage from '../assets/Hero_bg1.png';
-import newHeroImage2 from '../assets/Hero_bg2.png';
-import newHeroImage3 from '../assets/Hero_bg3.png';
-import newHeroImage4 from '../assets/Hero_bg4.png';
-import newHeroImage5 from '../assets/Hero_bg5.png';
+import newHeroImage from '../assets/Hero_bg1.jpg';
+import newHeroImage2 from '../assets/Hero_bg2.jpg';
+import newHeroImage3 from '../assets/Hero_bg3.jpg';
+import newHeroImage4 from '../assets/Hero_bg4.jpg';
+import newHeroImage5 from '../assets/Hero_bg5.jpg';
 
 // Array of background images for the carousel
 const backgroundImages = [
