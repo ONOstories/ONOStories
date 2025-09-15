@@ -104,7 +104,7 @@ export function Hero() {
           <button className="prev">{'<'}</button>
           <button className="next">{'>'}</button>
         </div>
-        <div className="timeRunning" ref={runningTimeRef}></div>
+        {/* <div className="timeRunning" ref={runningTimeRef}></div> */}
       </div>
 
       {/* Dark Overlay for Text Readability */}
