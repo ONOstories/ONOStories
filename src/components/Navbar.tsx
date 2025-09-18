@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthProvider";
 import { Lock } from "lucide-react";
-import logo from '../assets/ONOstories_logo.jpg'; 
+import logo from '../assets/ONOstories_logo.jpg';
 
 type NavbarProps = {
   forceSolidBackground?: boolean;
@@ -11,46 +11,56 @@ type NavbarProps = {
 const Navbar = ({ forceSolidBackground = false }: NavbarProps) => {
   const { user, logout, profile, loading } = useAuth();
   const navigate = useNavigate();
-  
+  const location = useLocation();
+
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 50) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
-      }
-    };
-
+    const handleScroll = () => setIsScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll);
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const handleLogout = async () => {
     await logout();
-    navigate('/'); 
+    navigate('/');
   };
 
-  const handleCreateStoriesClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    navigate('/pricing');
+  // Generic guard: if not logged in, send to /login and remember where the user wanted to go
+  const requireAuth = (e: React.MouseEvent, targetPath: string) => {
+    if (loading) return; // ignore while hydrating
+    if (!user) {
+      e.preventDefault();
+      navigate('/login', { state: { redirectTo: targetPath, from: location.pathname } });
+    }
   };
-  
+
+  // Create Stories needs both: login + pro role
+  const handleCreateStoriesClick = (e: React.MouseEvent) => {
+    if (loading) return;
+    if (!user) {
+      e.preventDefault();
+      navigate('/login', { state: { redirectTo: '/create-stories', from: location.pathname } });
+      return;
+    }
+    if (profile?.role !== 'prouser') {
+      e.preventDefault();
+      navigate('/pricing');
+    }
+  };
+
   const isSolid = isScrolled || forceSolidBackground;
 
   const linkStyle = {
     textShadow: isSolid ? 'none' : '1px 1px 4px rgba(0, 0, 0, 0.7)',
   };
-  const linkClassName = isSolid 
-    ? "text-gray-700 hover:text-indigo-600" 
+  const linkClassName = isSolid
+    ? "text-gray-700 hover:text-indigo-600"
     : "text-white hover:text-gray-200";
 
   const renderAuthButtons = () => {
     if (loading) {
-      return <div className="h-10 w-28" />; 
+      return <div className="h-10 w-28" />;
     }
 
     if (user) {
@@ -70,18 +80,18 @@ const Navbar = ({ forceSolidBackground = false }: NavbarProps) => {
         </div>
       );
     }
-    
+
     return (
       <div className="space-x-2">
-        <Link 
-          to="/login" 
+        <Link
+          to="/login"
           className={`px-4 py-2 text-sm font-bold rounded-md transition-colors duration-300 ${isSolid ? 'text-gray-700 bg-gray-100 hover:bg-gray-200' : 'text-white bg-black/20 hover:bg-black/30'}`}
           style={linkStyle}
         >
           Login
         </Link>
-        <Link 
-          to="/signup" 
+        <Link
+          to="/signup"
           className="px-4 py-2 text-sm font-bold text-white bg-gradient-to-r from-[#9333EA] to-[#DB2777] rounded-md hover:from-[#7E22CE] hover:to-[#BE185D]"
           style={linkStyle}
         >
@@ -104,30 +114,56 @@ const Navbar = ({ forceSolidBackground = false }: NavbarProps) => {
               />
             </Link>
           </div>
+
           <div className="hidden sm:ml-6 sm:flex sm:space-x-8 items-center">
-            <Link to="/" className={`inline-flex items-center px-1 pt-1 text-sm font-bold transition-colors duration-300 ${linkClassName}`} style={linkStyle}>
+            <Link
+              to="/"
+              className={`inline-flex items-center px-1 pt-1 text-sm font-bold transition-colors duration-300 ${linkClassName}`}
+              style={linkStyle}
+            >
               Home
             </Link>
-            <Link to="/about" className={`inline-flex items-center px-1 pt-1 text-sm font-bold transition-colors duration-300 ${linkClassName}`} style={linkStyle}>
+
+            <Link
+              to="/about"
+              className={`inline-flex items-center px-1 pt-1 text-sm font-bold transition-colors duration-300 ${linkClassName}`}
+              style={linkStyle}
+            >
               About Us
             </Link>
-            <Link to="/story-library" className={`inline-flex items-center px-1 pt-1 text-sm font-bold transition-colors duration-300 ${linkClassName}`} style={linkStyle}>
+
+            <Link
+              to="/story-library"
+              onClick={(e) => requireAuth(e, '/story-library')}
+              className={`inline-flex items-center px-1 pt-1 text-sm font-bold transition-colors duration-300 ${linkClassName}`}
+              style={linkStyle}
+            >
               Story Library
             </Link>
-            {user && profile?.role === 'prouser' ? (
-              <Link to="/create-stories" className={`inline-flex items-center px-1 pt-1 text-sm font-bold transition-colors duration-300 ${linkClassName}`} style={linkStyle}>
-                Create Stories
-              </Link>
-            ) : (
-              <span onClick={handleCreateStoriesClick} className={`cursor-pointer inline-flex items-center px-1 pt-1 text-sm font-bold transition-colors duration-300 ${isSolid ? 'text-gray-400' : 'text-white/70'}`} title="Only available to Pro users" style={isSolid ? {} : linkStyle}>
+
+            <Link
+              to="/create-stories"
+              onClick={handleCreateStoriesClick}
+              className={`inline-flex items-center px-1 pt-1 text-sm font-bold transition-colors duration-300 ${linkClassName}`}
+              style={linkStyle}
+              title={!user ? 'Login required' : profile?.role !== 'prouser' ? 'Pro plan required' : undefined}
+            >
+              {(!user || profile?.role !== 'prouser') && (
                 <Lock className={`h-4 w-4 mr-1 transition-colors duration-300 ${isSolid ? 'text-gray-400' : 'text-white/70'}`} />
-                Create Stories
-              </span>
-            )}
-            <Link to="/pricing" className={`inline-flex items-center px-1 pt-1 text-sm font-bold transition-colors duration-300 ${linkClassName}`} style={linkStyle}>
+              )}
+              Create Stories
+            </Link>
+
+            <Link
+              to="/pricing"
+              onClick={(e) => requireAuth(e, '/pricing')}
+              className={`inline-flex items-center px-1 pt-1 text-sm font-bold transition-colors duration-300 ${linkClassName}`}
+              style={linkStyle}
+            >
               Pricing
             </Link>
           </div>
+
           <div className="flex items-center">
             {renderAuthButtons()}
           </div>
