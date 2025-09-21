@@ -61,6 +61,50 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Unauthenticated' }), { headers, status: 401 });
     }
 
+      // Fetch user profile & check limits
+  const { data: profile, error: profileErr } = await supabase
+    .from('profiles')
+    .select('role, plan_expires_at, stories_generated, stories_downloaded, subscription_status')
+    .eq('id', user.id)
+    .single();
+
+  if (profileErr || !profile) {
+    return new Response(JSON.stringify({ error: 'Profile not found' }), { headers, status: 403 });
+  }
+
+  // Downgrade expired
+  if (profile.plan_expires_at && new Date(profile.plan_expires_at) < new Date()) {
+    await supabase.from('profiles').update({
+      role: 'normaluser',
+      subscription_status: 'inactive',
+      plan_expires_at: null
+    }).eq('id', user.id);
+    return new Response(JSON.stringify({ error: 'Your Pro plan has expired.' }), { headers, status: 403 });
+  }
+
+  // Pro limitations
+  if (profile.role === 'prouser') {
+    // Get plan type by expiry window
+    const days = Math.round(
+      (new Date(profile.plan_expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+    );
+    const isAnnual = days > 60; // crude but effective
+
+    const maxStories = isAnnual ? 236 : 20;
+
+    if (profile.stories_generated >= maxStories) {
+      // Downgrade on overflow
+      await supabase.from('profiles').update({
+        role: 'normaluser',
+        subscription_status: 'inactive',
+        plan_expires_at: null
+      }).eq('id', user.id);
+      return new Response(JSON.stringify({
+        error: `Story generation limit reached (${maxStories}). Your plan has expired.`
+      }), { headers, status: 403 });
+    }
+  }
+
     if (!photo) {
       return new Response(JSON.stringify({ error: 'Missing photo' }), { headers, status: 400 });
     }
@@ -104,6 +148,13 @@ Deno.serve(async (req) => {
       console.error('start-story: insert error', insertError);
       return new Response(JSON.stringify({ error: insertError.message }), { headers, status: 403 });
     }
+
+      if (profile.role === 'prouser') {
+    await supabase
+      .from('profiles')
+      .update({ stories_generated: (profile.stories_generated ?? 0) + 1 })
+      .eq('id', user.id);
+  }
 
     for (const c of setCookies) headers.append('Set-Cookie', c);
     return new Response(JSON.stringify({ storyId: storyData.id, photo_url }), { headers, status: 200 });

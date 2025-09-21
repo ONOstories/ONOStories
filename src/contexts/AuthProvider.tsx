@@ -9,6 +9,9 @@ export interface Profile {
   role: 'normaluser' | 'prouser';
   subscription_status: 'active' | 'inactive';
   plan_expires_at: string | null;
+    // Add these:
+  stories_generated?: number;
+  stories_downloaded?: number;
 }
 
 interface AuthContextType {

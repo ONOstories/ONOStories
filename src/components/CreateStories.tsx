@@ -193,8 +193,8 @@ export const CreateStories: React.FC = () => {
 
             <div className="flex justify-center pt-6 border-t border-gray-200">
               <button type="submit" disabled={isLoading} className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-10 py-4 rounded-full text-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition-transform hover:scale-105 shadow-lg flex items-center space-x-3 disabled:opacity-60 disabled:cursor-not-allowed">
-                {isLoading ? (<Loader2 className="h-6 w-6 animate-spin" />) : (<Sparkles className="h-6 w-6" />)}
-                <span>{isLoading ? "Preparing..." : "Generate Magic"}</span>
+                {isLoading && (<Loader2 className="h-6 w-6 animate-spin" />) }
+                <span>{isLoading ? "Preparing..." : "Generate Story"}</span>
               </button>
             </div>
           </form>

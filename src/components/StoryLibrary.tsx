@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Loader2, BookOpen, Download } from "lucide-react";
 import Navbar from './Navbar'; 
+import UsageBanner from "./UsageBanner";
 
 interface Story {
   id: string;
@@ -88,13 +89,13 @@ useEffect(() => {
       <Navbar />
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 pt-24 pb-12 px-6">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
+          <div className="text-center mb-4">
             <h1 className="text-5xl font-bold tracking-tight bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent mb-4">
               Your Story Library
             </h1>
-            <p className="text-xl text-gray-600">All your created adventures, ready to be read and shared.</p>
+            <p className="text-xl text-gray-600">Your personalized story collection - read, enjoy, and download anytime.</p>
           </div>
-
+          <UsageBanner />
           {stories.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {stories.map((story) => (

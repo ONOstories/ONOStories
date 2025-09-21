@@ -65,6 +65,8 @@ serve(async (req) => {
           role: "prouser",
           subscription_status: "active",
           plan_expires_at: expiryDate.toISOString(),
+          stories_generated: 0,
+          stories_downloaded: 0
         })
         .eq("id", userId);
 
