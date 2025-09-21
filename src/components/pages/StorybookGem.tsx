@@ -7,10 +7,18 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { PDFDocument, rgb } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
 
+// Use your real logo path here. If in public, just '/ONOstories_logo.jpg'
+const logoUrl = '/ONOstories_logo.jpg';
+
 function download(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = filename;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 interface StoryPageData { narration: string; imageUrl: string; }
@@ -31,7 +39,8 @@ const StorybookGem = () => {
       try {
         const res = await fetch(`/edge/get-story?storyId=${encodeURIComponent(storyId)}`, { credentials: 'include' });
         const j = await res.json();
-        if (!res.ok || !j.story || !j.story.storybook_data) throw new Error(j.error || 'Could not fetch the story data.');
+        if (!res.ok || !j.story || !j.story.storybook_data)
+          throw new Error(j.error || 'Could not fetch the story data.');
         setStory(j.story as StoryData);
       } catch (e: any) {
         toast.error(e.message || 'Could not fetch the story data.');
@@ -43,33 +52,136 @@ const StorybookGem = () => {
   }, [storyId]);
 
   const handleDownload = async () => {
-    if (!story) return;
-    setIsDownloading(true);
-    toast.info('Preparing your storybook for download...');
-    try {
-      const pdfDoc = await PDFDocument.create(); pdfDoc.registerFontkit(fontkit);
-      const fontUrl = 'https://ytigoauzuwnfkfxoglkp.supabase.co/storage/v1/object/public/assets/NewEraCasualBold.ttf';
-      const fontBytes = await fetch(fontUrl).then(res => res.arrayBuffer());
-      const customFont = await pdfDoc.embedFont(fontBytes);
-      const imageBytesArray = await Promise.all(story.storybook_data.map(p => fetch(p.imageUrl).then(r => r.arrayBuffer())));
-      for (let i = 0; i < story.storybook_data.length; i++) {
-        const page = pdfDoc.addPage(); const { width, height } = page.getSize();
-        const embeddedImage = await pdfDoc.embedPng(imageBytesArray[i]); const imgDims = embeddedImage.scaleToFit(width - 100, height - 280);
-        page.drawImage(embeddedImage, { x: (width - imgDims.width) / 2, y: height - imgDims.height - 60, width: imgDims.width, height: imgDims.height });
-        page.drawText(story.storybook_data[i].narration, { x: 50, y: 100, font: customFont, size: 18, lineHeight: 26, color: rgb(0.1, 0.1, 0.1), maxWidth: width - 100 });
+  if (!story) return;
+  setIsDownloading(true);
+  toast.info('Preparing your storybook for download...');
+  try {
+    const pdfDoc = await PDFDocument.create();
+    pdfDoc.registerFontkit(fontkit);
+
+    // Fetch everything
+    const fontUrl = 'https://ytigoauzuwnfkfxoglkp.supabase.co/storage/v1/object/public/assets/NewEraCasualBold.ttf';
+    const fontBytes = await fetch(fontUrl).then(res => res.arrayBuffer());
+    const customFont = await pdfDoc.embedFont(fontBytes);
+    const logoBytes = await fetch(logoUrl).then((r) => r.arrayBuffer());
+    const logoImage = await pdfDoc.embedJpg(logoBytes);
+
+    const imageBytesArray = await Promise.all(
+      story.storybook_data.map(p => fetch(p.imageUrl).then(r => r.arrayBuffer()))
+    );
+
+    for (let i = 0; i < story.storybook_data.length; i++) {
+      const page = pdfDoc.addPage([595, 842]); // A4 size
+      const { width, height } = page.getSize();
+
+      // 1. Logo (top center)
+      const logoH = 38, logoMargin = 16;
+      const logoDims = logoImage.scale(logoH / logoImage.height);
+      let y = height - logoDims.height - logoMargin;
+      page.drawImage(logoImage, {
+        x: (width - logoDims.width) / 2,
+        y,
+        width: logoDims.width,
+        height: logoDims.height,
+      });
+
+      // 2. Title, only on first page
+      if (i === 0) {
+        y -= logoMargin + 28;
+        const title = story.title;
+        const titleFontSize = 24;
+        const textWidth = customFont.widthOfTextAtSize(title, titleFontSize);
+        page.drawText(title, {
+          x: (width - textWidth) / 2,
+          y,
+          font: customFont,
+          size: titleFontSize,
+          color: rgb(0.17, 0.11, 0.5),
+        });
       }
-      const pdfBytes = await pdfDoc.save(); const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
-      const fileName = `${story.title.replace(/\s+/g, '_')}.pdf`; download(blob, fileName); toast.success('Download complete!');
-    } catch (err) { console.error(err); toast.error('Failed to create PDF for download.'); }
-    finally { setIsDownloading(false); }
-  };
+
+      // 3. Illustration (large, centered)
+      const maxImgWidth = width - 100;    // 50pt margin left & right
+      const maxImgHeight = height * 0.58; // ~60% of vertical space
+      const embeddedImage = await pdfDoc.embedPng(imageBytesArray[i]);
+      const imgDims = embeddedImage.scaleToFit(maxImgWidth, maxImgHeight);
+
+      const imgX = (width - imgDims.width) / 2;
+      // Leave 32pt below the last title line, or 80pt below logo if not first page
+      const imgY = (i === 0 ? y - 32 : y - 80);
+      page.drawImage(embeddedImage, {
+        x: imgX,
+        y: imgY - imgDims.height,
+        width: imgDims.width,
+        height: imgDims.height,
+      });
+
+      // 4. Place narration directly below image (space: 26pt)
+      const narration = story.storybook_data[i].narration;
+      const narrationFontSize = 16;
+      const maxTextWidth = width - 116;
+      const lines = splitByWidth(narration, customFont, narrationFontSize, maxTextWidth);
+
+      // Place text 26pt below image, centered horizontally
+      let textY = imgY - imgDims.height - 26;
+      lines.forEach((line, idx) => {
+        const tw = customFont.widthOfTextAtSize(line, narrationFontSize);
+        page.drawText(line, {
+          x: (width - tw) / 2,
+          y: textY - idx * (narrationFontSize + 5),
+          font: customFont,
+          size: narrationFontSize,
+          color: rgb(0.13, 0.13, 0.13),
+        });
+      });
+    }
+
+    const pdfBytes = await pdfDoc.save();
+    const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
+    const fileName = `${story.title.replace(/\s+/g, '_')}.pdf`;
+    download(blob, fileName);
+    toast.success('Download complete!');
+  } catch (err) {
+    console.error(err);
+    toast.error('Failed to create PDF for download.');
+  } finally {
+    setIsDownloading(false);
+  }
+};
+
+// Utility for line wrapping
+function splitByWidth(text: string, font: any, size: number, maxWidth: number) {
+  const words = text.split(' ');
+  let lines: string[] = [];
+  let curr = '';
+  for (let word of words) {
+    const test = curr ? curr + ' ' + word : word;
+    if (font.widthOfTextAtSize(test, size) > maxWidth) {
+      if (curr) lines.push(curr);
+      curr = word;
+    } else {
+      curr = test;
+    }
+  }
+  if (curr) lines.push(curr);
+  return lines;
+}
+
 
   const totalPages = story?.storybook_data?.length || 0;
   const nextPage = () => { if (currentPage < totalPages - 1) { setDirection(1); setCurrentPage(currentPage + 1); } };
   const prevPage = () => { if (currentPage > 0) { setDirection(-1); setCurrentPage(currentPage - 1); } };
-  const pageVariants = { enter: (d: number) => ({ x: d > 0 ? '100%' : '-100%', opacity: 0 }), center: { x: 0, opacity: 1 }, exit: (d: number) => ({ x: d < 0 ? '100%' : '-100%', opacity: 0 }) };
+  const pageVariants = {
+    enter: (d: number) => ({ x: d > 0 ? '100%' : '-100%', opacity: 0 }),
+    center: { x: 0, opacity: 1 },
+    exit: (d: number) => ({ x: d < 0 ? '100%' : '-100%', opacity: 0 })
+  };
 
-  if (loading) return (<div className="flex h-screen w-full items-center justify-center bg-gray-50"><Loader2 className="h-12 w-12 animate-spin text-purple-600" /></div>);
+  if (loading) return (
+    <div className="flex h-screen w-full items-center justify-center bg-gray-50">
+      <Loader2 className="h-12 w-12 animate-spin text-purple-600" />
+    </div>
+  );
   if (!story) return (
     <div className="flex h-screen w-full flex-col items-center justify-center bg-gray-50">
       <h2 className="text-2xl font-bold text-red-600">Story Not Found or Data Missing</h2>
@@ -79,7 +191,8 @@ const StorybookGem = () => {
     </div>
   );
 
-  const { title, storybook_data } = story; const page = storybook_data[currentPage];
+  const { title, storybook_data } = story;
+  const page = storybook_data[currentPage];
 
   return (
     <div className="flex h-screen flex-col bg-[#FDF8F3] font-serif">
@@ -90,17 +203,24 @@ const StorybookGem = () => {
           {isDownloading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Download className="mr-2 h-5 w-5" />} Download
         </button>
       </header>
-
       <main className="relative flex-1 overflow-hidden">
         <AnimatePresence initial={false} custom={direction}>
           <motion.div key={currentPage} custom={direction} variants={pageVariants} initial="enter" animate="center" exit="exit" transition={{ type: 'tween', ease: 'easeInOut', duration: 0.5 }} className="absolute grid h-full w-full grid-cols-1 md:grid-cols-2">
-            <div className="group relative h-full w-full cursor-pointer bg-gray-200" onClick={prevPage}>
+            <div className="group relative flex items-center justify-center h-full w-full cursor-pointer bg-gray-200" onClick={prevPage}>
               <img src={page.imageUrl} alt={`Illustration for page ${currentPage + 1}`} className="h-full w-full object-cover" />
-              {currentPage > 0 && (<div className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-white/50 p-2 opacity-0 transition-opacity group-hover:opacity-100"><ArrowLeft className="h-8 w-8 text-gray-700" /></div>)}
+              {currentPage > 0 && (<div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center"><ArrowLeft className="h-8 w-8 text-gray-700" /></div>)}
             </div>
-            <div className="group relative flex h-full w-full cursor-pointer items-center justify-center bg-white p-8 md:p-12" onClick={nextPage}>
-              <p className="max-w-md text-2xl leading-loose text-gray-800 md:text-3xl">{page.narration}</p>
-              {currentPage < totalPages - 1 && (<div className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-gray-100/50 p-2 opacity-0 transition-opacity group-hover:opacity-100"><ArrowLeft className="h-8 w-8 rotate-180 text-gray-700" /></div>)}
+            <div className="group relative flex h-full w-full flex-col items-center justify-center cursor-pointer bg-white p-8 md:p-12" onClick={nextPage}>
+              <div className="flex flex-col items-center justify-center w-full h-full">
+                <p className="max-w-md text-2xl md:text-3xl text-gray-800 leading-loose text-center">
+                  {page.narration}
+                </p>
+              </div>
+              {currentPage < totalPages - 1 && (
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center justify-center">
+                  <ArrowLeft className="h-8 w-8 rotate-180 text-gray-700" />
+                </div>
+              )}
             </div>
           </motion.div>
         </AnimatePresence>

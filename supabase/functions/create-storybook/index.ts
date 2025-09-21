@@ -44,7 +44,7 @@ serve(async (req) => {
     const { user_id, title, child_name, gender, age, genre, short_description } = storyRecord;
 
     const geminiPrompt = `
-      You are an expert children's story author. Create a simple, heartwarming 5-page story.
+      You are an expert children's story author. Create a simple, heartwarming 5-page story using simple English and short sentences that a 10-year-old can read. Avoid big words and keep the story friendly and easy.
       Output ONLY a valid JSON array of 5 objects. Each object must have "narration" (string, <=100 words) and "illustration_prompt" (string).
       Details -> Name: ${child_name}, Age: ${age}, Gender: ${gender}, Title: ${title}, Genre: ${genre}, Description: ${short_description}`;
 

@@ -36,12 +36,38 @@ const StoryLibrary = () => {
     }
   }, [user]);
 
-  useEffect(() => {
-    fetchStories();
+useEffect(() => {
+  let isFirstLoad = true;
+  let intervalId: NodeJS.Timeout | null = null;
+
+  const loadStories = async () => {
     if (!user) return;
-    const id = setInterval(fetchStories, 4000); // light polling instead of Realtime
-    return () => clearInterval(id);
-  }, [user, fetchStories]);
+    try {
+      const res = await fetch('/edge/list-stories', { credentials: 'include' });
+      const j = await res.json();
+      if (!res.ok) throw new Error(j.error || 'Could not fetch your stories.');
+      setStories(j.stories ?? []);
+    } catch (e: any) {
+      toast.error(e.message || "Could not fetch your stories.");
+      if (isFirstLoad) setStories([]); // Only clear on first load fail
+    } finally {
+      if (isFirstLoad) {
+        setLoading(false);
+        isFirstLoad = false;
+      }
+    }
+  };
+
+  if (user) {
+    setLoading(true);
+    loadStories();
+    intervalId = setInterval(loadStories, 4000);
+  } else {
+    setLoading(false);
+  }
+  return () => { if (intervalId) clearInterval(intervalId); };
+}, [user]);
+
 
   if (loading) {
     return (
