@@ -4,7 +4,7 @@ import { useAuth } from "../contexts/AuthProvider";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Upload, Trash2, Sparkles, Loader2, User, BookOpen, Camera } from "lucide-react";
-import Navbar from "./Navbar"; // Import the Navbar
+import Navbar from "./Navbar";
 
 export const CreateStories: React.FC = () => {
   const { user } = useAuth();
@@ -22,6 +22,7 @@ export const CreateStories: React.FC = () => {
     short_description: "",
   });
 
+  // ... (keep your handlePhotoSelect, removePhoto, and handleChange functions exactly as they are)
   const handlePhotoSelect = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -36,7 +37,7 @@ export const CreateStories: React.FC = () => {
       setPhotoPreview(null);
     }
   };
-  
+
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setStoryForm((prev) => ({ ...prev, [name]: value }));
@@ -48,43 +49,43 @@ export const CreateStories: React.FC = () => {
       toast.error("You must be logged in to create a story.");
       return;
     }
-    if (!storyForm.title || !storyForm.childName || !storyForm.age || !storyForm.gender || !storyForm.genre || !uploadedPhoto) {
-      toast.error("Please fill in all required fields and upload a photo.");
-      return;
-    }
+    // ... (rest of your validation)
 
     setIsLoading(true);
 
     try {
-      const fileExt = uploadedPhoto.name.split('.').pop();
-      const fileName = `${Date.now()}.${fileExt}`;
-      const filePath = `${user.id}/${fileName}`;
-      const { error: uploadError } = await supabase.storage.from('child-photos').upload(filePath, uploadedPhoto);
-      if (uploadError) throw uploadError;
+      const formData = new FormData();
+      // --- ADD THIS LINE ---
+      formData.append('userId', user.id); // Securely pass the user's ID
 
-      const { data: { publicUrl } } = supabase.storage.from('child-photos').getPublicUrl(filePath);
-      if (!publicUrl) throw new Error("Could not get public URL for the photo.");
+      formData.append('photo', uploadedPhoto!);
+      formData.append('title', storyForm.title);
+      formData.append('childName', storyForm.childName);
+      formData.append('age', storyForm.age);
+      formData.append('gender', storyForm.gender);
+      formData.append('genre', storyForm.genre);
+      formData.append('short_description', storyForm.short_description);
 
-      const { data: storyData, error: insertError } = await supabase
-        .from('stories')
-        .insert({
-          user_id: user.id,
-          title: storyForm.title,
-          child_name: storyForm.childName,
-          age: parseInt(storyForm.age, 10),
-          gender: storyForm.gender,
-          genre: storyForm.genre,
-          short_description: storyForm.short_description,
-          photo_url: publicUrl,
-          status: 'pending',
-        })
-        .select('id')
-        .single();
-      
-      if (insertError) throw insertError;
-      if (!storyData?.id) throw new Error("Failed to create story record.");
+      // CreateStories.tsx (no userId in form data)
+      const response = await fetch('/edge/start-story', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
 
-      navigate('/creating-story', { state: { storyId: storyData.id } });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to start story creation.');
+      }
+
+      const data = await response.json();
+
+      if (!data?.storyId) {
+        throw new Error("Function did not return a story ID.");
+      }
+
+      navigate('/creating-story', { state: { storyId: data.storyId } });
 
     } catch (error: any) {
       console.error("Error starting story creation:", error);
@@ -93,6 +94,7 @@ export const CreateStories: React.FC = () => {
     }
   };
 
+  // ... (keep the rest of your JSX return statement exactly as it is)
   return (
     <>
       <Navbar />
@@ -108,7 +110,7 @@ export const CreateStories: React.FC = () => {
           </div>
 
           <form onSubmit={handleCreateStory} className="bg-white rounded-2xl shadow-2xl shadow-purple-100 p-8 space-y-10">
-            
+
             <div className="space-y-6">
               <div className="flex items-center space-x-3">
                 <div className="bg-purple-100 p-2 rounded-full"><User className="h-6 w-6 text-purple-600" /></div>
@@ -163,7 +165,7 @@ export const CreateStories: React.FC = () => {
             </div>
 
             <div className="space-y-6">
-               <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-3">
                 <div className="bg-orange-100 p-2 rounded-full"><Camera className="h-6 w-6 text-orange-600" /></div>
                 <h2 className="text-2xl font-semibold text-gray-800">Add The Main Character</h2>
               </div>

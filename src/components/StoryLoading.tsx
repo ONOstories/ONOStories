@@ -1,7 +1,7 @@
+// src/components/StoryLoading.tsx
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabaseClient'; // Adjusted import path
-import { useAuth } from '../contexts/AuthProvider'; // Adjusted import path
+import { useAuth } from '../contexts/AuthProvider';
 import { toast } from 'sonner';
 
 const StoryLoading = () => {
@@ -18,63 +18,60 @@ const StoryLoading = () => {
       return;
     }
 
-    // Immediately invoke the function
-    const createStory = async () => {
+    let stop = false;
+    const poll = async () => {
+      try {
+        setStatus('Your story is being written and illustrated...');
+        const res = await fetch(`/edge/story-status?storyId=${encodeURIComponent(storyId)}`, {
+          credentials: 'include', // send HttpOnly cookies
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Status check failed');
+        if (data.status === 'complete') {
+          toast.success('Your storybook is ready!');
+          navigate('/story-library');
+          return;
+        }
+        if (data.status === 'failed') {
+          toast.error('There was an issue creating your story. Please try again.');
+          navigate('/story-library');
+          return;
+        }
+      } catch (e: any) {
+        console.error('Status poll error:', e);
+      }
+      if (!stop) setTimeout(poll, 2000); // 2s interval
+    };
+
+    // kick off the AI generation (unchanged)
+    (async () => {
       try {
         setStatus('Warming up the AI storytellers...');
-        const { error } = await supabase.functions.invoke('create-storybook', {
-          body: { storyId },
+        const res = await fetch('/edge/create-storybook', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ storyId }),
         });
-        if (error) throw error; // Throw error if invocation itself fails
-        setStatus('Your story is being written and illustrated...');
-      } catch (error: any) {
-        console.error("Failed to invoke storybook function:", error);
-        toast.error(`Error starting story creation: ${error.message}`);
-        setStatus(`Oops! Something went wrong.`);
-        // Redirect back to the library on failure
+        if (!res.ok) {
+          const j = await res.json().catch(() => ({}));
+          throw new Error(j.error || 'Failed to start');
+        }
+        poll();
+      } catch (err: any) {
+        console.error('Failed to invoke storybook function:', err);
+        toast.error(`Error starting story creation: ${err.message}`);
         setTimeout(() => navigate('/story-library'), 3000);
       }
-    };
+    })();
 
-    createStory();
-
-    // Set up the real-time listener
-    const channel = supabase
-      .channel(`story_update_${storyId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'stories',
-          filter: `id=eq.${storyId}`,
-        },
-        (payload) => {
-          const updatedStory = payload.new as { status: string };
-          console.log('Received update:', updatedStory);
-          if (updatedStory.status === 'complete') {
-            toast.success('Your storybook is ready!');
-            navigate('/story-library');
-          } else if (updatedStory.status === 'failed') {
-            toast.error('There was an issue creating your story. Please try again.');
-            navigate('/story-library');
-          }
-        }
-      )
-      .subscribe();
-
-    // Cleanup function
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { stop = true; };
   }, [storyId, user, navigate]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 flex flex-col items-center justify-center text-center p-4">
       <div className="w-24 h-24 border-8 border-dashed rounded-full animate-spin border-purple-600 mb-8"></div>
-      <h1 className="text-4xl font-bold text-purple-800 mb-4">
-        Creating Your Magical Story...
-      </h1>
+      <h1 className="text-4xl font-bold text-purple-800 mb-4">Creating Your Magical Story...</h1>
       <p className="text-lg text-gray-600">{status}</p>
       <p className="text-sm text-gray-500 mt-4">Please stay on this page. You will be redirected when it's ready.</p>
     </div>

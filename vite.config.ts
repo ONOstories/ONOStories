@@ -15,6 +15,9 @@ export default defineConfig({
         changeOrigin: true,
         secure: true,
         rewrite: (p) => p.replace(/^\/edge/, ''),
+        // Fix: Add these two lines to handle cookies correctly
+        ws: true,
+        cookieDomainRewrite: 'localhost',
       },
     },
   },
