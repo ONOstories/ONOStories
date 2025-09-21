@@ -2,11 +2,11 @@ import { useEffect, useRef } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthProvider';
-import newHeroImage from '../assets/Hero_bg1.jpg';
-import newHeroImage2 from '../assets/Hero_bg2.jpg';
-import newHeroImage3 from '../assets/Hero_bg3.jpg';
-import newHeroImage4 from '../assets/Hero_bg4.jpg';
-import newHeroImage5 from '../assets/Hero_bg5.jpg';
+import newHeroImage from '../assets/ONObg1.png';
+import newHeroImage2 from '../assets/pic2.png';
+import newHeroImage3 from '../assets/ONObg2.png';
+import newHeroImage4 from '../assets/pic1.png';
+import newHeroImage5 from '../assets/pic3.png';
 
 const backgroundImages = [newHeroImage, newHeroImage2, newHeroImage3, newHeroImage4, newHeroImage5];
 

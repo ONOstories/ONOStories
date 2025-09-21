@@ -4,7 +4,7 @@ import { useAuth } from "../contexts/AuthProvider";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Upload, Trash2, Sparkles, Loader2, User, BookOpen, Camera } from "lucide-react";
-import Navbar from "./Navbar";
+import Navbar from './Navbar'; 
 
 export const CreateStories: React.FC = () => {
   const { user } = useAuth();

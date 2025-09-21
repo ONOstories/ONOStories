@@ -4,7 +4,7 @@ import { useAuth } from "../contexts/AuthProvider";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Loader2, BookOpen, Download } from "lucide-react";
-import Navbar from "./Navbar";
+import Navbar from './Navbar'; 
 
 interface Story {
   id: string;
