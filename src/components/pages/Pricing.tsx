@@ -104,7 +104,7 @@ export function Pricing() {
       <div className="max-w-8xl mx-auto">
         {/* headline */}
         <header className="text-center mb-12">
-          <br></br>
+          <br />
           <h1 className="text-5xl font-extrabold bg-gradient-to-r from-[#4C1D95] to-[#2E1065] bg-clip-text text-transparent">
             Choose Your Plan
           </h1>
@@ -158,7 +158,9 @@ export function Pricing() {
         {/* pricing cards */}
         <div className="flex flex-wrap justify-center gap-8">
           {/* --- FREE PLAN --- */}
-          <article className="relative flex flex-col w-full max-w-sm bg-white rounded-2xl shadow-lg p-8">
+          <article
+            className="relative flex flex-col w-full max-w-sm bg-white rounded-2xl shadow-lg p-8 transition-all duration-200 hover:scale-105 hover:shadow-2xl"
+          >
             <div className="text-center mb-8">
               <h3 className="text-2xl font-bold text-[#2E1065] mb-2">Free</h3>
               <div className="mb-4">
@@ -181,7 +183,9 @@ export function Pricing() {
           </article>
 
           {/* --- PRO PLAN --- */}
-          <article className="relative flex flex-col w-full max-w-sm bg-white rounded-2xl shadow-xl p-8 border-2 border-purple-500">
+          <article
+            className="relative flex flex-col w-full max-w-sm bg-white rounded-2xl shadow-xl p-8 transition-all duration-200 hover:scale-105 hover:shadow-2xl"
+          >
             <Badge text="Most Popular" icon={<Star className="h-4 w-4" />} />
             <div className="text-center mb-8">
               <h3 className="text-2xl font-bold text-[#2E1065] mb-2">Pro</h3>
@@ -211,7 +215,9 @@ export function Pricing() {
           </article>
 
           {/* --- PREMIUM PLAN (Coming Soon) --- */}
-          <article className="relative flex flex-col w-full max-w-sm bg-white rounded-2xl shadow-lg p-8 opacity-60 cursor-not-allowed">
+          <article
+            className="relative flex flex-col w-full max-w-sm bg-white rounded-2xl shadow-lg p-8 opacity-60 cursor-not-allowed transition-all duration-200 hover:scale-105 hover:shadow-2xl"
+          >
             <Badge text="Coming Soon" icon={<Hourglass className="h-4 w-4" />} />
             <div className="text-center mb-8">
               <h3 className="text-2xl font-bold text-[#2E1065] mb-2">Premium (Coming Soon)</h3>

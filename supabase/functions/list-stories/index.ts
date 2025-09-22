@@ -28,13 +28,24 @@ Deno.serve(async (req) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return new Response(JSON.stringify({ error: 'Unauthenticated' }), { headers, status: 401 });
 
-  const { data, error } = await supabase
+  // FETCH FREE STORIES (all users)
+  const { data: free, error: freeError } = await supabase
+    .from('stories')
+    .select('id, title, pdf_url, status, storybook_data, created_at')
+    .eq('is_free', true)
+    .eq('status', 'complete')
+    .order('created_at', { ascending: false });
+
+  // FETCH USER'S GENERATED STORIES (that are not marked free)
+  const { data: generated, error: genError } = await supabase
     .from('stories')
     .select('id, title, pdf_url, status, storybook_data, created_at')
     .eq('user_id', user.id)
+    .or('is_free.is.false,is_free.is.null') // show not-free or legacy
     .order('created_at', { ascending: false });
 
   for (const c of setCookies) headers.append('Set-Cookie', c);
-  if (error) return new Response(JSON.stringify({ error: error.message }), { headers, status: 403 });
-  return new Response(JSON.stringify({ stories: data }), { headers, status: 200 });
+  if (freeError || genError)
+    return new Response(JSON.stringify({ error: freeError?.message ?? genError?.message }), { headers, status: 403 });
+  return new Response(JSON.stringify({ free, generated }), { headers, status: 200 });
 });
