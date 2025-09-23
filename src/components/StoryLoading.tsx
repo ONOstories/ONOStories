@@ -73,7 +73,7 @@ const StoryLoading = () => {
       <div className="w-24 h-24 border-8 border-dashed rounded-full animate-spin border-purple-600 mb-8"></div>
       <h1 className="text-4xl font-bold text-purple-800 mb-4">Creating Your Magical Story...</h1>
       <p className="text-lg text-gray-600">{status}</p>
-      <p className="text-sm text-gray-500 mt-4">Please stay on this page. You will be redirected when it's ready.</p>
+      <p className="text-sm text-gray-500 mt-4">This may take a few minutes. Please keep this page open, you’ll be redirected as soon as your story is ready.</p>
     </div>
   );
 };

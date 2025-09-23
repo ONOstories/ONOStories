@@ -65,10 +65,10 @@ export function Pricing() {
         description: `Purchase ${plansData[planId].name} Plan`,
         order_id: order.id,
         handler: function () {
-            // This function is called after a successful payment.
-            // The webhook will handle the database update.
-            alert("Payment successful! Your account will be updated shortly.");
-            navigate("/");
+          // This function is called after a successful payment.
+          // The webhook will handle the database update.
+          alert("Payment successful! Your account will be updated shortly.");
+          navigate("/");
         },
         prefill: {
           name: profile?.name || "",
@@ -109,7 +109,7 @@ export function Pricing() {
             Choose Your Plan
           </h1>
           <p className="mt-4 text-xl text-[#4C1D95]/90 max-w-3xl mx-auto">
-            Start free with demo stories, then upgrade to create unlimited personalized adventures for your child.
+            Upgrade to Pro Plan to create Personalized adventures for your child.
           </p>
           <div className="mt-6">
             <span className="inline-block px-6 py-2 rounded-full bg-gradient-to-r from-pink-500 to-orange-400 text-white font-bold text-lg shadow-lg animate-pulse">
@@ -123,31 +123,27 @@ export function Pricing() {
           <div className="relative inline-flex rounded-full bg-white/90 shadow-lg">
             {/* sliding pill */}
             <span
-              className={`absolute inset-y-0 left-0 w-1/2 rounded-full bg-gradient-to-r from-[#4C1D95] to-[#2E1065] transition-transform duration-200 ease-out ${
-                cycle === "annual" ? "translate-x-full" : ""
-              }`}
+              className={`absolute inset-y-0 left-0 w-1/2 rounded-full bg-gradient-to-r from-[#4C1D95] to-[#2E1065] transition-transform duration-200 ease-out ${cycle === "annual" ? "translate-x-full" : ""
+                }`}
             />
             {/* Monthly */}
             <button
               onClick={() => setCycle("monthly")}
-              className={`relative z-10 h-12 w-40 text-base font-semibold rounded-full transition-colors duration-200 ${
-                cycle === "monthly" ? "text-white" : "text-[#4C1D95]"
-              }`}
+              className={`relative z-10 h-12 w-40 text-base font-semibold rounded-full transition-colors duration-200 ${cycle === "monthly" ? "text-white" : "text-[#4C1D95]"
+                }`}
             >
               Monthly
             </button>
             {/* Annual */}
             <button
               onClick={() => setCycle("annual")}
-              className={`relative z-10 h-12 w-40 text-base font-semibold rounded-full transition-colors duration-200 ${
-                cycle === "annual" ? "text-white" : "text-[#4C1D95]"
-              }`}
+              className={`relative z-10 h-12 w-40 text-base font-semibold rounded-full transition-colors duration-200 ${cycle === "annual" ? "text-white" : "text-[#4C1D95]"
+                }`}
             >
               Annual
               <span
-                className={`ml-1 font-medium ${
-                  cycle === "annual" ? "text-emerald-200" : "text-[#2E1065]"
-                }`}
+                className={`ml-1 font-medium ${cycle === "annual" ? "text-emerald-200" : "text-[#2E1065]"
+                  }`}
               >
                 Save 12%
               </span>
@@ -165,13 +161,13 @@ export function Pricing() {
               <h3 className="text-2xl font-bold text-[#2E1065] mb-2">Free</h3>
               <div className="mb-4">
                 <span className="text-4xl font-extrabold text-[#2E1065]">₹0</span>
-                <span className="text-lg text-gray-500">/mo</span>
+                <span className="text-xs font-extrabold text-gray-500">/month</span>
               </div>
               <p className="text-[#4C1D95]/90">Perfect for trying out ONOSTORIES</p>
             </div>
             <ul className="space-y-4 mb-8 flex-1">
               <li className="flex items-start gap-3"><Check className="h-5 w-5 text-emerald-500 mt-0.5" /><span className="text-[#4C1D95]">4–5 pre-made demo stories</span></li>
-              <li className="flex items-start gap-3"><Check className="h-5 w-5 text-emerald-500 mt-0.5" /><span className="text-[#4C1D95]">View stories online only</span></li>
+              <li className="flex items-start gap-3"><Check className="h-5 w-5 text-emerald-500 mt-0.5" /><span className="text-[#4C1D95]">View and download pre-made demo stories</span></li>
               <li className="flex items-start gap-3"><Check className="h-5 w-5 text-emerald-500 mt-0.5" /><span className="text-[#4C1D95]">Sample different story types</span></li>
               <li className="flex items-start gap-3"><Check className="h-5 w-5 text-emerald-500 mt-0.5" /><span className="text-[#4C1D95]">Basic story experience</span></li>
             </ul>
@@ -189,22 +185,51 @@ export function Pricing() {
             <Badge text="Most Popular" icon={<Star className="h-4 w-4" />} />
             <div className="text-center mb-8">
               <h3 className="text-2xl font-bold text-[#2E1065] mb-2">Pro</h3>
-              <div className="mb-4">
-                <span className="text-4xl font-extrabold text-[#2E1065]">
-                  ₹{cycle === 'annual' ? Math.round(plansData.annual.price / 12) : plansData.monthly.price}
-                </span>
-                <span className="text-lg text-gray-500">/mo</span>
+              <div className="mb-4 flex items-center justify-center gap-3">
+                {cycle === 'annual' ? (
+                  <>
+                    <span
+                      className="text-2xl text-gray-400 line-through font-semibold"
+                      style={{ textDecorationThickness: '2px', textDecorationColor: '#e53e3e' }}
+                    >
+                      ₹4,788
+                    </span>
+                    <span className="text-4xl font-extrabold text-[#2E1065]">
+                      ₹4212
+                      <span className="text-xs font-regular text-gray-500">/year</span>
+
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-4xl font-extrabold text-[#2E1065]">
+                    ₹{plansData.monthly.price} <span className="text-xs text-gray-500">/month</span>
+                  </span>
+                )}
+                
               </div>
               <p className="text-[#4C1D95]/90">Full access to personalized storytelling</p>
             </div>
             <ul className="space-y-4 mb-8 flex-1">
-              <li className="flex items-start gap-3"><Check className="h-5 w-5 text-emerald-500 mt-0.5" /><span className="text-[#4C1D95]">Upload child photos (4-5 images)</span></li>
-              <li className="flex items-start gap-3"><Check className="h-5 w-5 text-emerald-500 mt-0.5" /><span className="text-[#4C1D95]">Unlimited personalized stories</span></li>
-              <li className="flex items-start gap-3"><Check className="h-5 w-5 text-emerald-500 mt-0.5" /><span className="text-[#4C1D95]">3 main genres + sub-genres</span></li>
-              <li className="flex items-start gap-3"><Check className="h-5 w-5 text-emerald-500 mt-0.5" /><span className="text-[#4C1D95]">Custom genre option</span></li>
-              <li className="flex items-start gap-3"><Check className="h-5 w-5 text-emerald-500 mt-0.5" /><span className="text-[#4C1D95]">Download stories as PDF</span></li>
-              <li className="flex items-start gap-3"><Check className="h-5 w-5 text-emerald-500 mt-0.5" /><span className="text-[#4C1D95]">Story history & regeneration</span></li>
-              <li className="flex items-start gap-3"><Check className="h-5 w-5 text-emerald-500 mt-0.5" /><span className="text-[#4C1D95]">Priority customer support</span></li>
+              <li className="flex items-start gap-3">
+                <Check className="h-5 w-5 text-emerald-500 mt-0.5" />
+                <span className="text-[#4C1D95]">Personalized stories for your child</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <Check className="h-5 w-5 text-emerald-500 mt-0.5" />
+                <span className="text-[#4C1D95]"> Explore and generate stories by choosing preferred genres</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <Check className="h-5 w-5 text-emerald-500 mt-0.5" />
+                <span className="text-[#4C1D95]"> Instantly download your favorite stories as beautiful PDFs</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <Check className="h-5 w-5 text-emerald-500 mt-0.5" />
+                <span className="text-[#4C1D95]"> Save and revisit every story in your personal library</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <Check className="h-5 w-5 text-emerald-500 mt-0.5" />
+                <span className="text-[#4C1D95]"> Regenerate any story for fresh, exciting adventures</span>
+              </li>
             </ul>
             <button
               onClick={() => handlePayment(cycle)}
