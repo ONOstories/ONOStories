@@ -94,13 +94,15 @@ serve(async (req) => {
     if (!storyText) throw new Error("Gemini response was empty or malformed.");
     const storyPages: StoryPage[] = JSON.parse(storyText);
     console.log(`[STORY ID: ${storyId}] Story text generated.`);
-    
+
     const childDescriptor = `The main character is a child named ${child_name}, age ${age}, gender ${gender}. Match the child's facial features, skin tone, and hairstyle to this reference photo: ${storyRecord.photo_url}. Keep the same color and style of clothing throughout all images.`;
 
     const imagePromises = storyPages.map((page) =>
       openai.images.generate({
         model: "dall-e-3",
-        prompt: `${childDescriptor}\n${page.illustration_prompt}. Style: beautiful children's book illustration, consistent child appearance, clean line-work, soft vibrant colors.`,
+        prompt: `${childDescriptor}
+          ${page.illustration_prompt}.
+          Style: beautiful children's book illustration, consistent child appearance, clean line-work, soft vibrant colors. Do not include any text, captions, letters, or words in the image.`,
         n: 1,
         size: "1024x1024",
         response_format: "url",

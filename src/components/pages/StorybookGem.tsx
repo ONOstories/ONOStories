@@ -1,4 +1,3 @@
-// src/pages/StoryBookGem.tsx
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Loader2, ArrowLeft, Download } from 'lucide-react';
@@ -7,7 +6,6 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { PDFDocument, rgb } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
 
-// Use your real logo path here. If in public, just '/ONOstories_logo.jpg'
 const logoUrl = '/ONOstories_logo.jpg';
 
 function download(blob: Blob, filename: string) {
@@ -53,37 +51,28 @@ const StorybookGem = () => {
 
   const handleDownload = async () => {
     if (!story) return;
-
-    // --- NEW: Check Pro download limit ---
     const resp = await fetch('/edge/track-download', { method: 'POST', credentials: 'include' });
     if (!resp.ok) {
       const j = await resp.json().catch(() => ({}));
       toast.error(j.error || 'Download limit reached, please renew your plan!');
       return;
     }
-
     setIsDownloading(true);
     toast.info('Preparing your storybook for download...');
     try {
       const pdfDoc = await PDFDocument.create();
       pdfDoc.registerFontkit(fontkit);
-
-      // Fetch everything
       const fontUrl = 'https://ytigoauzuwnfkfxoglkp.supabase.co/storage/v1/object/public/assets/NewEraCasualBold.ttf';
       const fontBytes = await fetch(fontUrl).then(res => res.arrayBuffer());
       const customFont = await pdfDoc.embedFont(fontBytes);
       const logoBytes = await fetch(logoUrl).then((r) => r.arrayBuffer());
       const logoImage = await pdfDoc.embedJpg(logoBytes);
-
       const imageBytesArray = await Promise.all(
         story.storybook_data.map(p => fetch(p.imageUrl).then(r => r.arrayBuffer()))
       );
-
       for (let i = 0; i < story.storybook_data.length; i++) {
         const page = pdfDoc.addPage([595, 842]); // A4 size
         const { width, height } = page.getSize();
-
-        // 1. Logo (top center)
         const logoH = 38, logoMargin = 16;
         const logoDims = logoImage.scale(logoH / logoImage.height);
         let y = height - logoDims.height - logoMargin;
@@ -93,8 +82,6 @@ const StorybookGem = () => {
           width: logoDims.width,
           height: logoDims.height,
         });
-
-        // 2. Title, only on first page
         if (i === 0) {
           y -= logoMargin + 28;
           const title = story.title;
@@ -108,13 +95,9 @@ const StorybookGem = () => {
             color: rgb(0.17, 0.11, 0.5),
           });
         }
-
-        // 3. Illustration (large, centered, minimal gap to narration)
-        const maxImgWidth = width - 100;    // 50pt margin left & right
-        const maxImgHeight = height * 0.58;
+        const maxImgWidth = width - 100; const maxImgHeight = height * 0.58;
         const embeddedImage = await pdfDoc.embedPng(imageBytesArray[i]);
         const imgDims = embeddedImage.scaleToFit(maxImgWidth, maxImgHeight);
-
         const imgX = (width - imgDims.width) / 2;
         const imgY = (i === 0 ? y - 32 : y - 80);
         page.drawImage(embeddedImage, {
@@ -123,13 +106,9 @@ const StorybookGem = () => {
           width: imgDims.width,
           height: imgDims.height,
         });
-
-        // 4. Place narration directly below image (space: 26pt)
         const narration = story.storybook_data[i].narration;
-        const narrationFontSize = 16;
-        const maxTextWidth = width - 116;
+        const narrationFontSize = 16; const maxTextWidth = width - 116;
         const lines = splitByWidth(narration, customFont, narrationFontSize, maxTextWidth);
-
         let textY = imgY - imgDims.height - 26;
         lines.forEach((line, idx) => {
           const tw = customFont.widthOfTextAtSize(line, narrationFontSize);
@@ -141,8 +120,6 @@ const StorybookGem = () => {
             color: rgb(0.13, 0.13, 0.13),
           });
         });
-
-        // 5. Page Number bottom-center
         const pageStr = `Page ${i + 1} of ${story.storybook_data.length}`;
         const pageNumFontSize = 11;
         const pageNumWidth = customFont.widthOfTextAtSize(pageStr, pageNumFontSize);
@@ -154,7 +131,6 @@ const StorybookGem = () => {
           color: rgb(0.5, 0.5, 0.5),
         });
       }
-
       const pdfBytes = await pdfDoc.save();
       const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
       const fileName = `${story.title.replace(/\s+/g, '_')}.pdf`;
@@ -213,39 +189,95 @@ const StorybookGem = () => {
 
   return (
     <div className="flex h-screen flex-col bg-[#FDF8F3] font-serif">
-      <header className="flex items-center justify-between border-b border-gray-300 p-4">
-        <button onClick={() => navigate('/story-library')} className="rounded-lg bg-gray-200 px-3 py-1.5 text-gray-700 hover:bg-gray-300">Back to Library</button>
-        <div className="flex flex-col items-center justify-center">
-          <h1 className="text-center text-2xl font-bold text-gray-800">{title}</h1>
-          <span className="text-sm text-gray-500 font-normal mt-1">{`Page ${currentPage + 1} of ${totalPages}`}</span>
+       <header className="flex items-center justify-between border-b border-gray-300 p-3 md:p-4">
+        <button
+          onClick={() => navigate('/story-library')}
+          className="rounded-lg bg-gray-200 px-2 md:px-4 py-1.5 text-gray-700 hover:bg-gray-300 flex items-center"
+        >
+          <ArrowLeft className="mr-2 h-5 w-5" /> <span className="hidden sm:inline">Back</span>
+        </button>
+        <div className="flex flex-col items-center flex-1">
+          <h1 className="text-center text-base sm:text-lg md:text-2xl font-bold text-gray-800 leading-tight line-clamp-2 max-w-[86vw]">{title}</h1>
+          <span className="text-xs md:text-sm text-gray-500 font-normal mt-1">{`Page ${currentPage + 1} of ${totalPages}`}</span>
         </div>
-        <button onClick={handleDownload} disabled={isDownloading} className="flex items-center rounded-lg bg-blue-500 px-3 py-1.5 text-white hover:bg-blue-600 disabled:bg-blue-300">
-          {isDownloading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Download className="mr-2 h-5 w-5" />} Download
+        <button
+          onClick={handleDownload}
+          disabled={isDownloading}
+          className="flex items-center rounded-lg bg-blue-500 p-2 text-white hover:bg-blue-600 disabled:bg-blue-300"
+          title="Download PDF"
+        >
+          {isDownloading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Download className="h-5 w-5" />}
+          <span className="hidden sm:inline ml-2">Download</span>
         </button>
       </header>
-      <main className="relative flex-1 overflow-hidden">
+      <main className="flex-1 flex flex-col items-stretch relative overflow-auto">
         <AnimatePresence initial={false} custom={direction}>
-          <motion.div key={currentPage} custom={direction} variants={pageVariants} initial="enter" animate="center" exit="exit" transition={{ type: 'tween', ease: 'easeInOut', duration: 0.5 }} className="absolute flex h-full w-full items-center justify-center gap-0">
+          <motion.div
+            key={currentPage}
+            custom={direction}
+            variants={pageVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ type: 'tween', ease: 'easeInOut', duration: 0.5 }}
+            className="flex flex-col md:flex-row h-full w-full items-stretch justify-center gap-0 absolute inset-0"
+          >
             {/* Image Section */}
-            <div className="relative flex h-full w-full  items-center justify-center cursor-pointer" onClick={prevPage}>
-  <img src={page.imageUrl} alt={`Illustration for page ${currentPage + 1}`} className="object-contain max-h-full w-full " />
+            <div className="
+              flex
+              md:items-center
+              justify-center
+              md:w-1/2
+              w-full
+              bg-white/0
+              p-2
+              md:p-6
+              cursor-pointer
+              " onClick={prevPage}
+            >
+              <img
+                src={page.imageUrl}
+                alt={`Illustration for page ${currentPage + 1}`}
+                className="object-contain max-h-[45vh] md:max-h-full w-full rounded-lg shadow-lg border"
+                style={{ background: "#fff" }}
+              />
               {currentPage > 0 && (
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center">
-                  <ArrowLeft className="h-8 w-8 text-black" />
-                </div>
+                <button aria-label="Previous Page"
+                  className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center justify-center bg-gray-200 p-2 rounded-full shadow md:left-4 md:p-3"
+                >
+                  <ArrowLeft className="h-7 w-7 text-[#3b3b73]" />
+                </button>
               )}
             </div>
             {/* Narration Section */}
-            <div className="relative flex h-full w-full max-w-[47%] flex-col items-center justify-center bg-white cursor-pointer p-8 md:p-12" onClick={nextPage}>
+            <div className="
+              flex
+              flex-col
+              w-full
+              md:w-1/2
+              items-center
+              justify-center
+              bg-white
+              p-4
+              md:p-12
+              cursor-pointer
+              border-t
+              md:border-t-0
+              md:border-l
+              border-gray-100
+              " onClick={nextPage}
+            >
               <div className="flex flex-col items-center justify-center w-full h-full">
-                <p className="max-w-md w-full text-2xl md:text-3xl text-gray-800 leading-loose text-center">
+                <p className="w-full max-w-full md:max-w-md text-lg md:text-3xl text-gray-800 leading-relaxed text-center break-words" style={{ wordBreak: "break-word" }}>
                   {page.narration}
                 </p>
               </div>
               {currentPage < totalPages - 1 && (
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center justify-center">
-                  <ArrowLeft className="h-8 w-8 rotate-180 text-gray-700" />
-                </div>
+                <button aria-label="Next Page"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center bg-gray-100 p-2 rounded-full shadow md:right-4 md:p-3"
+                >
+                  <ArrowLeft className="h-7 w-7 rotate-180 text-[#2e2e6d]" />
+                </button>
               )}
             </div>
           </motion.div>
