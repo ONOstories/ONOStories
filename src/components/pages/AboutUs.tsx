@@ -1,10 +1,23 @@
 // src/components/pages/AboutUs.tsx
-import { Twitter, Linkedin } from 'lucide-react';
+import { Linkedin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Navbar from '../Navbar';
 import { Footer } from '../Footer';
 import logo from '../../assets/ONOstories_logo.jpg';
 import rohitImage from '../../assets/Rohit_Raut.jpg';
+
+// X (Twitter) SVG icon, minimal and bold for "X"
+function XLogo({ size = 20 }) {
+  return (
+    <svg height={size} width={size} viewBox="0 0 40 40" fill="none" aria-hidden="true">
+      <rect width="40" height="40" rx="7" fill="black" />
+      <path
+        d="M23.233 19.101 32 8h-2.047l-7.564 9.299L15.05 8H8l9.062 13.185L8 32h2.048l8.05-9.902L24.95 32H32L23.233 19.101Zm-2.86 3.518-1.149-1.639L10.754 9.304h3.405l6.057 8.637 1.148 1.639 9.278 13.676h-3.405l-6.056-8.637Z"
+        fill="white"
+      />
+    </svg>
+  );
+}
 
 export function AboutUs() {
   return (
@@ -70,11 +83,21 @@ export function AboutUs() {
               Hi, I’m Rohit, a 22-year-old on a mission to provide real value to society. When I’m not building ONO Stories, I love to dance and paint. My vision is simple: to empower the next generation with stories that make them wiser, kinder, and more imaginative.
             </p>
             <div className="flex gap-4 mb-2">
-              <a href="https://x.com/Rohit_Raut1" target="_blank" rel="noopener noreferrer" className="bg-[#1DA1F2] text-white px-4 py-2 rounded-full flex items-center gap-2 hover:brightness-110 shadow transition">
-                <Twitter size={20} />
-                Twitter
+              <a
+                href="https://x.com/Rohit_Raut1"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-black text-white px-4 py-2 rounded-full flex items-center gap-2 hover:brightness-110 shadow transition"
+              >
+                <XLogo size={20} />
+                X
               </a>
-              <a href="https://www.linkedin.com/in/rohitraut01/" target="_blank" rel="noopener noreferrer" className="bg-[#0A66C2] text-white px-4 py-2 rounded-full flex items-center gap-2 hover:brightness-110 shadow transition">
+              <a
+                href="https://www.linkedin.com/in/rohitraut01/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-[#0A66C2] text-white px-4 py-2 rounded-full flex items-center gap-2 hover:brightness-110 shadow transition"
+              >
                 <Linkedin size={20} />
                 LinkedIn
               </a>

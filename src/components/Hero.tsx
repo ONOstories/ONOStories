@@ -2,13 +2,13 @@ import { useEffect, useRef } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthProvider';
-import newHeroImage from '../assets/ONObg1.png';
-import newHeroImage2 from '../assets/pic2.png';
-import newHeroImage3 from '../assets/ONObg2.png';
-import newHeroImage4 from '../assets/pic1.png';
-import newHeroImage5 from '../assets/pic3.png';
+import H1 from '../assets/H1.png';
+import H9 from '../assets/H9.png';
+import H11 from '../assets/H11.png';
+import H12 from '../assets/H12.png';
+import H13 from '../assets/H13.png';
 
-const backgroundImages = [newHeroImage, newHeroImage2, newHeroImage3, newHeroImage4, newHeroImage5];
+const backgroundImages = [H1,H9,H11,H12,H13];
 
 export function Hero() {
   const navigate = useNavigate();
@@ -98,8 +98,8 @@ export function Hero() {
       <div className="absolute inset-0 bg-black/40 z-10" />
 
       <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center text-white p-4">
-        <h1 className="mb-6 text-4xl font-extrabold tracking-tight text-white md:text-6xl lg:text-7xl" style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.7)' }}>
-          Your Child's<br className="hidden sm:block" /> Story Adventure
+        <h1 className="mt-8 mb-6 text-4xl font-extrabold tracking-tight text-white md:text-6xl lg:text-7xl" style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.7)' }}>
+          ONO Stories
         </h1>
 
         <p className="mx-auto mb-12 max-w-3xl text-lg leading-8 text-gray-200 md:text-xl" style={{ textShadow: '1px 1px 4px rgba(0,0,0,0.7)' }}>

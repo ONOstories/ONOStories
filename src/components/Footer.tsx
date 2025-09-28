@@ -5,6 +5,10 @@ import { Instagram, Twitter, Linkedin } from "lucide-react";
 import { Link } from "react-router-dom";
 import logo from '../assets/ONOstories_logo.jpg';
 
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
 export function Footer() {
   return (
     <footer className="new_footer_area" style={{ background: 'linear-gradient(135deg, #e0c3fc 0%, #f9c6e0 40%, #f7b267 80%, #f3e7fe 100%)' }}>
@@ -16,7 +20,7 @@ export function Footer() {
             
             {/* Column 1: Brand */}
             <div className="flex flex-col items-start text-left">
-              <Link to="/" className="mb-4">
+              <Link to="/" className="mb-4" onClick={scrollToTop}>
                 <img
                   className="h-12 w-auto"
                   src={logo}
@@ -32,10 +36,18 @@ export function Footer() {
             <div className="text-left lg:text-center">
               <h3 className="f-title">Quick Links</h3>
               <ul className="f_list">
-                <li><Link to="/">Home</Link></li>
-                <li><Link to="/about">About Us</Link></li>
-                <li><Link to="/story-library">Story Library</Link></li>
-                <li><Link to="/pricing">Pricing</Link></li>
+                <li>
+                  <Link to="/" onClick={scrollToTop}>Home</Link>
+                </li>
+                <li>
+                  <Link to="/about" onClick={scrollToTop}>About Us</Link>
+                </li>
+                <li>
+                  <Link to="/story-library" onClick={scrollToTop}>Story Library</Link>
+                </li>
+                <li>
+                  <Link to="/pricing" onClick={scrollToTop}>Pricing</Link>
+                </li>
               </ul>
             </div>
 

@@ -3,6 +3,10 @@
     {
       "source": "/edge/:path*",
       "destination": "https://ytigoauzuwnfkfxoglkp.supabase.co/functions/v1/:path*"
+    },
+    { 
+      "source": "/(.*)", 
+      "destination": "/index.html" 
     }
   ]
 }

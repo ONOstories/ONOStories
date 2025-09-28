@@ -13,14 +13,17 @@ const Navbar = ({ forceSolidBackground = false }: NavbarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const atHome = location.pathname === "/";
   const [isScrolled, setIsScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // Scroll detection only on Home
   useEffect(() => {
+    if (!atHome) return; // Don't listen unless on Home
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [atHome]);
 
   // Close menu on route change
   useEffect(() => { setMenuOpen(false); }, [location.pathname]);
@@ -51,7 +54,10 @@ const Navbar = ({ forceSolidBackground = false }: NavbarProps) => {
     }
   };
 
-  const isSolid = isScrolled || forceSolidBackground;
+  // Transparent only at top of Home, else always solid
+  const showTransparent = atHome && !isScrolled && !forceSolidBackground;
+  const isSolid = !showTransparent;
+
   const linkStyle = { textShadow: isSolid ? 'none' : '1px 1px 4px rgba(0, 0, 0, 0.7)' };
   const linkClassName = isSolid ? "text-gray-700 hover:text-indigo-600" : "text-white hover:text-gray-200";
 
@@ -137,7 +143,8 @@ const Navbar = ({ forceSolidBackground = false }: NavbarProps) => {
   );
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isSolid ? 'bg-white shadow-md' : 'bg-transparent'}`}>
+    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300
+      ${showTransparent ? "bg-transparent" : "bg-white shadow-md"}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex-shrink-0">
@@ -145,13 +152,11 @@ const Navbar = ({ forceSolidBackground = false }: NavbarProps) => {
               <img className="h-10 w-auto" src={logo} alt="ONO Stories Logo" />
             </Link>
           </div>
-
           {/* Desktop Nav */}
           <div className="hidden sm:ml-6 sm:flex sm:space-x-8 items-center">
             {navLinks}
           </div>
           <div className="hidden sm:flex items-center">{renderAuthButtons()}</div>
-
           {/* Mobile Hamburger */}
           <button
             type="button"

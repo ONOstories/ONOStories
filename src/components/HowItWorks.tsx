@@ -74,7 +74,7 @@ const steps = [
     id: 1,
     title: "Upload Photos",
     body:
-      "Pick 4–5 clear pictures of your child—our AI turns them into a lovable story character.",
+      "Upload a photo of your child — our AI turns them into a lovable story character.",
     image: uploadImg,
   },
   {
