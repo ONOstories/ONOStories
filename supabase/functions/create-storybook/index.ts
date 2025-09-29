@@ -95,14 +95,19 @@ serve(async (req) => {
     const storyPages: StoryPage[] = JSON.parse(storyText);
     console.log(`[STORY ID: ${storyId}] Story text generated.`);
 
-    const childDescriptor = `The main character is a child named ${child_name}, age ${age}, gender ${gender}. Match the child's facial features, skin tone, and hairstyle to this reference photo: ${storyRecord.photo_url}. Keep the same color and style of clothing throughout all images.`;
+    const childDescriptor = `The main character is a child named ${child_name}, age ${age}, gender ${gender}. 
+  Match the child's facial features, skin tone, and hairstyle as seen in the following reference photo: ${storyRecord.photo_url}. 
+  For ALL story images, strictly make the main character wear the EXACT clothing shown in the reference photo, 
+  with the same color, pattern, sleeves, and accessories. Do not alter or vary the clothing style, color, or outfit at all from the reference. 
+  Repeat this clothing style consistently for every generated illustration.`;
 
     const imagePromises = storyPages.map((page) =>
       openai.images.generate({
         model: "dall-e-3",
         prompt: `${childDescriptor}
-          ${page.illustration_prompt}.
-          Style: beautiful children's book illustration, consistent child appearance, clean line-work, soft vibrant colors. Do not include any text, captions, letters, or words in the image.`,
+  ${page.illustration_prompt}.
+  Style: beautiful children's book illustration, consistent child appearance, consistent clothing as described above and shown in the reference, clean line-work, soft vibrant colors. 
+  Absolutely do NOT introduce any new clothing items, colors, patterns, or accessories. Do not include any text, captions, letters, or words in the image.`,
         n: 1,
         size: "1024x1024",
         response_format: "url",

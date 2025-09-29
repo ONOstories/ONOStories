@@ -1,7 +1,7 @@
 import { AnimatedTestimonials } from './ui/animated-testimonials';
-import personalizedImg from "/Personalized.png";
-import aiPoweredImg from "/Ai powered.png";
-import safeAndEducationalImg from "/Safe and educational.png";
+import personalizedImg from "/Personalized.webp";
+import aiPoweredImg from "/Ai powered.webp";
+import safeAndEducationalImg from "/Safe and educational.webp";
 /**
  * Pastel-gradient block that explains why ONOSTORIES stands out.
  * Drop this anywhere in your page tree.

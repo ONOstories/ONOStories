@@ -2,11 +2,11 @@ import { useEffect, useRef } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthProvider';
-import H1 from '../assets/H1.png';
-import H9 from '../assets/H9.png';
-import H11 from '../assets/H11.png';
-import H12 from '../assets/H12.png';
-import H13 from '../assets/H13.png';
+import H1 from '../assets/H1.webp';
+import H9 from '../assets/H9.webp';
+import H11 from '../assets/H11.webp';
+import H12 from '../assets/H12.webp';
+import H13 from '../assets/H13.webp';
 
 const backgroundImages = [H1,H9,H11,H12,H13];
 
