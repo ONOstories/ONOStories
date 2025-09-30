@@ -8,7 +8,7 @@ import { corsHeaders } from "../_shared/cors.ts";
 
 const openai = new OpenAI({ apiKey: Deno.env.get("OPENAI_API_KEY") });
 const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
-const geminiApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=${geminiApiKey}`;
+const geminiApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`;
 
 interface StoryPage {
   narration: string;
@@ -18,7 +18,7 @@ interface StoryPage {
 async function updateStory(
   supabase: SupabaseClient,
   storyId: string,
-  updates: object
+  updates: object,
 ) {
   console.log(`[STORY ID: ${storyId}] Attempting to update with:`, updates);
   const { error } = await supabase
@@ -28,12 +28,48 @@ async function updateStory(
   if (error) {
     console.error(
       `[STORY ID: ${storyId}] FATAL: Could not update story. Reason:`,
-      error.message
+      error.message,
     );
-    // Throw an error to be caught by the main handler
     throw new Error(`Supabase update failed: ${error.message}`);
   } else {
     console.log(`[STORY ID: ${storyId}] Story updated successfully.`);
+  }
+}
+
+// --- SAFETY-AWARE DALL-E PROMPT FUNCTION ---
+async function safeGenerateImage(imagePrompt: string, fallbackPrompt?: string) {
+  try {
+    const res = await openai.images.generate({
+      model: "dall-e-3",
+      prompt: imagePrompt,
+      n: 1,
+      size: "1024x1024",
+      response_format: "url",
+    });
+    return res.data[0]?.url;
+  } catch (err) {
+    // Handle OpenAI safety block error
+    if (
+      String(err?.message || "").toLowerCase().includes("safety system") ||
+      String(err?.message || "").toLowerCase().includes("not allowed")
+    ) {
+      console.warn("[DALL-E safety warning]", err.message, imagePrompt);
+      if (fallbackPrompt) {
+        try {
+          const resFallback = await openai.images.generate({
+            model: "dall-e-3",
+            prompt: fallbackPrompt,
+            n: 1,
+            size: "1024x1024",
+            response_format: "url",
+          });
+          return resFallback.data[0]?.url;
+        } catch (fallbackErr) {
+          console.warn("[DALL-E fallback also failed]", fallbackErr.message, fallbackPrompt);
+        }
+      }
+    }
+    throw err;
   }
 }
 
@@ -44,7 +80,7 @@ serve(async (req) => {
   let storyId: string | null = null;
   const supabaseAdmin = createClient(
     Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
   try {
@@ -96,34 +132,35 @@ serve(async (req) => {
     console.log(`[STORY ID: ${storyId}] Story text generated.`);
 
     const childDescriptor = `The main character is a child named ${child_name}, age ${age}, gender ${gender}. 
-  Match the child's facial features, skin tone, and hairstyle as seen in the following reference photo: ${storyRecord.photo_url}. 
-  For ALL story images, strictly make the main character wear the EXACT clothing shown in the reference photo, 
-  with the same color, pattern, sleeves, and accessories. Do not alter or vary the clothing style, color, or outfit at all from the reference. 
-  Repeat this clothing style consistently for every generated illustration.`;
+      Match the child's facial features, skin tone, and hairstyle as seen in the following reference photo: ${storyRecord.photo_url}. 
+      For ALL story images, strictly make the main character wear the EXACT clothing shown in the reference photo, 
+      with the same color, pattern, sleeves, and accessories. Do not alter or vary the clothing style, color, or outfit at all from the reference. 
+      Repeat this clothing style consistently for every generated illustration.`;
 
-    const imagePromises = storyPages.map((page) =>
-      openai.images.generate({
-        model: "dall-e-3",
-        prompt: `${childDescriptor}
-  ${page.illustration_prompt}.
-  Style: beautiful children's book illustration, consistent child appearance, consistent clothing as described above and shown in the reference, clean line-work, soft vibrant colors. 
-  Absolutely do NOT introduce any new clothing items, colors, patterns, or accessories. Do not include any text, captions, letters, or words in the image.`,
-        n: 1,
-        size: "1024x1024",
-        response_format: "url",
-      })
-    );
+    const safeImageUrls = [];
+    for (let i = 0; i < storyPages.length; ++i) {
+      const page = storyPages[i];
+      // Use fallback prompt if safety filter triggers: remove all "reference photo" and just use a generic prompt
+      const safePrompt =
+        `${page.illustration_prompt}.
+        Style: beautiful children's book illustration, child character, clean line-work, soft vibrant colors. Do not include any text, captions, letters, or words in the image.`;
+      const fullPrompt =
+        `${childDescriptor}
+        ${page.illustration_prompt}.
+        Style: beautiful children's book illustration, consistent child appearance, consistent clothing as described above and shown in the reference, clean line-work, soft vibrant colors. 
+        Absolutely do NOT introduce any new clothing items, colors, patterns, or accessories. Do not include any text, captions, letters, or words in the image.`;
 
-    const imageResponses = await Promise.all(imagePromises);
-    const tempImageUrls = imageResponses
-      .map((res) => res.data[0]?.url)
-      .filter((url): url is string => !!url);
-    if (tempImageUrls.length !== 5)
-      throw new Error("DALL-E 3 failed to generate all 5 images.");
+      const url = await safeGenerateImage(fullPrompt, safePrompt);
+      if (!url) throw new Error(`DALL-E 3 failed to generate image for page ${i + 1}.`);
+      safeImageUrls.push(url);
+    }
+
+    if (safeImageUrls.length !== 5)
+      throw new Error("DALL-E 3 failed to generate all 5 images even after retries.");
     console.log(`[STORY ID: ${storyId}] Temporary image URLs received.`);
 
     const permanentImageUrls = await Promise.all(
-      tempImageUrls.map(async (tempUrl, index) => {
+      safeImageUrls.map(async (tempUrl, index) => {
         const imageResponse = await fetch(tempUrl);
         const imageBlob = await imageResponse.blob();
         const imagePath = `${user_id}/${storyId}/page_${index + 1}.png`;
@@ -135,13 +172,13 @@ serve(async (req) => {
           });
         if (uploadError)
           throw new Error(
-            `Failed to upload image ${index + 1}: ${uploadError.message}`
+            `Failed to upload image ${index + 1}: ${uploadError.message}`,
           );
         const {
           data: { publicUrl },
         } = supabaseAdmin.storage.from("storybooks").getPublicUrl(imagePath);
         return publicUrl;
-      })
+      }),
     );
     console.log(`[STORY ID: ${storyId}] Permanent image URLs created.`);
 
@@ -162,10 +199,9 @@ serve(async (req) => {
   } catch (error) {
     console.error(
       `[STORY ID: ${storyId ?? "Unknown"}] CRITICAL ERROR:`,
-      error.message
+      error.message,
     );
     if (storyId) {
-      // This block might not be reached if the updateStory itself fails, but it's a good fallback.
       await supabaseAdmin
         .from("stories")
         .update({
