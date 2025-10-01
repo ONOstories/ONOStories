@@ -1,11 +1,25 @@
 "use client";
-import { useNavigate } from "react-router-dom";
-
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthProvider';
 /* Pastel CTA without stars ─ matches the WhatMakesSpecial palette */
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
 export function PlayfulCTA() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user, loading } = useAuth();
+
+  const goOrLogin = (targetPath: string) => {
+    if (loading) return;
+    if (!user) {
+      navigate('/login', { state: { redirectTo: targetPath, from: location.pathname } });
+    } else {
+      navigate(targetPath);
+    }
+  };
   return (
-    
+
     <section className="relative overflow-hidden py-24 px-4">
       {/* shared peach-to-pink gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-[#FFF7ED] via-rose-200 to-[#FFE9F3]" />
@@ -24,8 +38,8 @@ export function PlayfulCTA() {
         </p>
 
         <button
-          onClick={() => navigate("/createstories")}
-          className="bg-white text-[#4C1D95] px-10 py-4 rounded-full text-lg font-semibold shadow-lg hover:bg-[#FFF7ED] active:scale-95 transition"
+          onClick={() => { goOrLogin('/create-stories'); scrollToTop(); }}
+          className="flex items-center justify-center mx-auto space-x-2 rounded-full bg-gradient-to-r from-[#9333EA] to-[#DB2777] px-8 py-4 text-base font-semibold text-white shadow-lg transition-all hover:scale-105 hover:from-[#7E22CE] hover:to-[#BE185D] md:text-lg"
         >
           Get Started Today
         </button>
@@ -44,8 +58,8 @@ function Decorations() {
       <div className="absolute -bottom-16 right-1/4 w-96 h-96 rounded-full border-[28px] border-transparent
                       border-t-rose-300 border-l-blue-300 border-r-emerald-300 rotate-45" />
 
-      
-<style>{`
+
+      <style>{`
   /*  ➜ cloud now glides right, pauses, then returns left
         for a soft “floating” feel */
   @keyframes cloud {
