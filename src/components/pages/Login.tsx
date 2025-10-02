@@ -63,7 +63,7 @@ export function Login() {
         
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <Label htmlFor="email">Email Address</Label>
+            <p>Email Address</p>
             <div className="relative mt-2">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
               <Input
@@ -79,7 +79,15 @@ export function Login() {
             </div>
           </div>
           <div>
-            <Label htmlFor="password">Password</Label>
+            <div className="flex justify-between items-center">
+            <p>Password</p>
+            <Link 
+                to="/forgot-password" 
+                className="text-sm font-semibold text-purple-600 hover:text-purple-700 underline"
+            >
+                Forgot Password?
+            </Link>
+            </div>
             <div className="relative mt-2">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
               <Input
@@ -103,25 +111,27 @@ export function Login() {
           </div>
           
           {/* --- ADD THIS LINK --- */}
-          <div className="text-right -mt-2">
+          {/* <div className="text-right -mt-2">
             <Link 
                 to="/forgot-password" 
                 className="text-sm font-semibold text-purple-600 hover:text-purple-700 underline"
             >
                 Forgot Password?
             </Link>
-          </div>
+          </div> */}
           {/* --- END OF ADDED LINK --- */}
 
           {error && <p className="text-sm text-center text-red-600 pt-2">{error}</p>}
           <div>
+            <div className="mt-7">
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full mt-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-4 rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 transition-all"
+              className="w-full  bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-4 rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 transition-all"
             >
               {isLoading ? 'Signing In...' : 'Sign In'}
             </button>
+            </div>
           </div>
         </form>
 

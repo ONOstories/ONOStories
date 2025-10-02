@@ -83,7 +83,7 @@ export function UpdatePasswordSimple() {
         
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <Label htmlFor="password">New Password</Label>
+            <p>New Password</p>
             <div className="relative mt-2">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
               <Input
@@ -101,7 +101,7 @@ export function UpdatePasswordSimple() {
             </div>
           </div>
           <div>
-            <Label htmlFor="confirmPassword">Confirm New Password</Label>
+            <p>Confirm New Password</p>
             <div className="relative mt-2">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
               <Input
