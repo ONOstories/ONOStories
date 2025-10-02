@@ -10,6 +10,8 @@ import { EmailConfirmed } from './components/pages/EmailConfirmed';
 import StoryLoading from '../src/components/StoryLoading.tsx';
 import { AboutUs } from "./components/pages/AboutUs";
 import StorybookGem from "./components/pages/StorybookGem";
+import { ForgotPassword } from "./components/pages/ForgotPassword";
+import { UpdatePassword } from "./components/pages/UpdatePassword";
 
 
 function App() {
@@ -20,6 +22,8 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/update-password" element={<UpdatePassword />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/story-library" element={<StoryLibrary />} />
           <Route path="/story/:storyId" element={<StorybookGem />} />

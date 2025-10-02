@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import ONOLogo from '../../assets/ONOstories_logo.jpg';
-import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../contexts/AuthProvider';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 
+// Assuming this is your Login component file location
 export function Login() {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
@@ -19,31 +19,28 @@ export function Login() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-// src/components/auth/Login.tsx  (only the changed submit handler shown)
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setIsLoading(true);
-  setError(null);
-  try {
-    const res = await fetch('/edge/auth-login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ email: formData.email, password: formData.password }),
-    });
-    if (!res.ok) {
-      const j = await res.json().catch(() => ({}));
-      throw new Error(j.error || 'Login failed');
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('/edge/auth-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email: formData.email, password: formData.password }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error || 'Login failed');
+      }
+      window.location.assign('/');
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
     }
-    // Optionally re-fetch /edge/auth-me or let a route change trigger it
-    window.location.assign('/');
-  } catch (err: any) {
-    setError(err.message);
-  } finally {
-    setIsLoading(false);
-  }
-};
-
+  };
 
   if (authLoading) {
     return <div className="min-h-screen flex items-center justify-center"><p>Loading...</p></div>;
@@ -104,6 +101,18 @@ const handleSubmit = async (e: React.FormEvent) => {
               </button>
             </div>
           </div>
+          
+          {/* --- ADD THIS LINK --- */}
+          <div className="text-right -mt-2">
+            <Link 
+                to="/forgot-password" 
+                className="text-sm font-semibold text-purple-600 hover:text-purple-700 underline"
+            >
+                Forgot Password?
+            </Link>
+          </div>
+          {/* --- END OF ADDED LINK --- */}
+
           {error && <p className="text-sm text-center text-red-600 pt-2">{error}</p>}
           <div>
             <button
@@ -128,3 +137,4 @@ const handleSubmit = async (e: React.FormEvent) => {
     </div>
   );
 }
+

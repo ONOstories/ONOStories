@@ -28,6 +28,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     storage: sessionAwareStorage,
     autoRefreshToken: true,
     persistSession: true, // This MUST be true for storage to work
-    detectSessionInUrl: false,
+    detectSessionInUrl: true, // ENABLE this for password recovery to work
   },
 });
