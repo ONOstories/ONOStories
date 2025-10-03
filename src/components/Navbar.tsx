@@ -1,37 +1,32 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthProvider";
-import { Lock, Menu, X } from "lucide-react";
+import { Lock, Menu, X, User as UserIcon } from "lucide-react";
 import logo from '../assets/ONOstories_logo.jpg';
+import ProfileDropdown from "./ProfileDropdown";
 
 type NavbarProps = {
   forceSolidBackground?: boolean;
 };
 
 const Navbar = ({ forceSolidBackground = false }: NavbarProps) => {
-  const { user, logout, profile, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   const atHome = location.pathname === "/";
   const [isScrolled, setIsScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
 
-  // Scroll detection only on Home
   useEffect(() => {
-    if (!atHome) return; // Don't listen unless on Home
+    if (!atHome) return;
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, [atHome]);
 
-  // Close menu on route change
   useEffect(() => { setMenuOpen(false); }, [location.pathname]);
-
-  const handleLogout = async () => {
-    await logout();
-    navigate('/');
-  };
 
   const requireAuth = (e: React.MouseEvent, targetPath: string) => {
     if (loading) return;
@@ -54,7 +49,6 @@ const Navbar = ({ forceSolidBackground = false }: NavbarProps) => {
     }
   };
 
-  // Transparent only at top of Home, else always solid
   const showTransparent = atHome && !isScrolled && !forceSolidBackground;
   const isSolid = !showTransparent;
 
@@ -67,18 +61,14 @@ const Navbar = ({ forceSolidBackground = false }: NavbarProps) => {
     }
     if (user) {
       return (
-        <div className={`flex items-center ${mobile ? "flex-col gap-3 mt-6" : "space-x-4"}`}>
-          {(profile?.name || profile?.email) && (
-            <span className="text-sm font-bold text-indigo-700 bg-indigo-100 px-3 py-1 rounded-full">
-              {profile?.name || profile?.email?.split('@')[0]}
-            </span>
-          )}
+        <div className={`relative flex items-center ${mobile ? "flex-col gap-3 mt-6" : "space-x-4"}`}>
           <button
-            onClick={handleLogout}
-            className={`px-3 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 ${mobile ? "w-full" : ""}`}
+            onClick={() => setProfileOpen(!profileOpen)}
+            className="rounded-full bg-gray-200 p-2 hover:bg-gray-300"
           >
-            Logout
+            <UserIcon className="h-6 w-6 text-gray-700" />
           </button>
+          {profileOpen && <ProfileDropdown close={() => setProfileOpen(false)} />}
         </div>
       );
     }
@@ -102,7 +92,6 @@ const Navbar = ({ forceSolidBackground = false }: NavbarProps) => {
     );
   };
 
-  // Main nav links
   const navLinks = (
     <>
       <Link
@@ -152,12 +141,10 @@ const Navbar = ({ forceSolidBackground = false }: NavbarProps) => {
               <img className="h-10 w-auto" src={logo} alt="ONO Stories Logo" />
             </Link>
           </div>
-          {/* Desktop Nav */}
           <div className="hidden sm:ml-6 sm:flex sm:space-x-8 items-center">
             {navLinks}
           </div>
           <div className="hidden sm:flex items-center">{renderAuthButtons()}</div>
-          {/* Mobile Hamburger */}
           <button
             type="button"
             className="sm:hidden flex items-center justify-center rounded p-2 text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-indigo-100"
@@ -168,7 +155,6 @@ const Navbar = ({ forceSolidBackground = false }: NavbarProps) => {
           </button>
         </div>
       </div>
-      {/* Mobile Nav Overlay */}
       {menuOpen && (
         <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex sm:hidden">
           <div className={`bg-white w-72 max-w-[80vw] h-full p-6 flex flex-col`}>
@@ -185,7 +171,6 @@ const Navbar = ({ forceSolidBackground = false }: NavbarProps) => {
             </nav>
             {renderAuthButtons(true)}
           </div>
-          {/* Click outside to close */}
           <div className="flex-1" onClick={() => setMenuOpen(false)} />
         </div>
       )}

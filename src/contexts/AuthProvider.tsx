@@ -6,6 +6,7 @@ export interface Profile {
   id: string;
   name: string | null;
   email: string;
+  gender: 'Male' | 'Female' | null;
   role: 'normaluser' | 'prouser';
   subscription_status: 'active' | 'inactive';
   plan_expires_at: string | null;
@@ -19,6 +20,7 @@ interface AuthContextType {
   profile: Profile | null;
   loading: boolean;
   logout: () => Promise<void>;
+  setProfile: (profile: Profile | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -51,7 +53,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, logout }}>
+    <AuthContext.Provider value={{ user, profile, loading, logout, setProfile }}>
       {children}
     </AuthContext.Provider>
   );

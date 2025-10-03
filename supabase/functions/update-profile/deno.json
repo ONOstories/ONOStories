@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "npm:react",
+    "lib": ["deno.ns", "dom"], 
+    "types": ["npm:@supabase/ssr"]
+  },
+  "imports": {
+    "std/": "https://deno.land/std@0.192.0/",
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@2.44.2",
+    "@supabase/ssr": "npm:@supabase/ssr@0.4.0"
+  }
+}
