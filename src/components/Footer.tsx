@@ -1,12 +1,21 @@
 // src/components/Footer.tsx
-
 "use client";
-import { Instagram, Twitter, Linkedin } from "lucide-react";
+import { Instagram,  Linkedin } from "lucide-react";
 import { Link } from "react-router-dom";
 import logo from '../assets/ONOstories_logo.jpg';
 
 function scrollToTop() {
   window.scrollTo({ top: 0, behavior: "smooth" });
+}
+function XLogo({ size = 26 }) {
+  return (
+    <svg height={size} width={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M19.79 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L6.535 21.75H3.227l7.73-8.835L2.8 2.25h6.828l4.713 6.231zm-1.37 16.92h2.045L8.03 4.124H5.744z"
+        fill="currentColor"
+      />
+    </svg>
+  );
 }
 
 export function Footer() {
@@ -55,7 +64,7 @@ export function Footer() {
             <div className="text-left lg:text-right">
               <h3 className="f-title">Follow Us</h3>
               <div className="f_social_icon">
-                <a href="https://x.com/onostoriess" target="_blank" rel="noopener noreferrer"><Twitter /></a>
+                <a href="https://x.com/onostoriess" target="_blank" rel="noopener noreferrer"><XLogo size={20} /></a>
                 <a href="https://www.instagram.com/onostories.app/?hl=en" target="_blank" rel="noopener noreferrer"><Instagram /></a>
                 <a href="https://www.linkedin.com/company/ono-stories/about/?viewAsMember=true" target="_blank" rel="noopener noreferrer"><Linkedin /></a>
               </div>
@@ -73,7 +82,7 @@ export function Footer() {
       {/* Copyright Bar */}
       <div className="footer_bottom">
         <div className="container mx-auto">
-          <p className="mb-0">
+          <p className="-mb-4">
             © {new Date().getFullYear()} ONOStories Inc. All rights reserved.
           </p>
         </div>

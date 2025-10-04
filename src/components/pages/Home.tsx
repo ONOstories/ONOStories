@@ -13,7 +13,7 @@ import { Testimonials } from '../../components/testimonials'; // 1. Import the n
 export function Home() {
   const navigate = useNavigate();
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 overflow-x-hidden">
       {/* Navbar */}
       <Navbar />
 

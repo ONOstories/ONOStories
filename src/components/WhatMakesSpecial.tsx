@@ -1,5 +1,5 @@
 import { AnimatedTestimonials } from './ui/animated-testimonials';
-import personalizedImg from "/Personalized.webp";
+import personalizedImg from "/Personalized.png";
 import aiPoweredImg from "/Ai powered.webp";
 import safeAndEducationalImg from "/Safe and educational.webp";
 /**

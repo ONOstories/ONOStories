@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../contexts/AuthProvider';
 import { toast } from 'sonner';
 
-const ProfileDropdown = ({ close }: { close: () => void }) => {
+const ProfileDropdown = ({ close, mobile = false }: { close: () => void; mobile?: boolean }) => {
   const { profile, setProfile, logout } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(profile?.name || '');
@@ -32,11 +32,17 @@ const ProfileDropdown = ({ close }: { close: () => void }) => {
     close(); // Close dropdown after logout
   };
 
+  // MODIFICATION: Conditional classes for positioning
+  const containerClasses = mobile
+    ? "w-full bg-white rounded-lg shadow-lg p-4 mt-2" // In-flow block for mobile
+    : "absolute top-12 right-0 w-72 bg-white rounded-lg shadow-lg p-4 z-50"; // Absolute for desktop
+
   return (
-    <div className="absolute top-12 right-0 w-72 bg-white rounded-lg shadow-lg p-4 z-50">
+    <div className={containerClasses}>
       <div className="flex flex-col space-y-4">
         <div>
-          <label className="text-sm font-medium text-gray-500">Username</label>
+          {/* MODIFICATION: Changed "Username" to "Name" */}
+          <label className="text-sm font-medium text-gray-500">Name</label>
           {isEditing ? (
             <input
               type="text"

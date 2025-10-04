@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, User, Eye, EyeOff, UserSquare } from 'lucide-react';
 import ONOLogo from '../../assets/ONOstories_logo.jpg';
 import { supabase } from '../../lib/supabaseClient';
 import { Label } from '../ui/label';
@@ -9,14 +9,14 @@ import { Input } from '../ui/input';
 
 export function Signup() {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({ fullName: '', email: '', password: '', confirmPassword: '' });
+  const [formData, setFormData] = useState({ fullName: '', email: '', password: '', confirmPassword: '', gender: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
@@ -27,6 +27,10 @@ export function Signup() {
       setError('Passwords do not match!');
       return;
     }
+    if (!formData.gender) {
+      setError('Please select a gender.');
+      return;
+    }
     setIsLoading(true);
     setError(null);
     setMessage(null);
@@ -35,7 +39,10 @@ export function Signup() {
       email: formData.email,
       password: formData.password,
       options: {
-        data: { name: formData.fullName },
+        data: {
+          name: formData.fullName,
+          gender: formData.gender
+        },
         emailRedirectTo: `${window.location.origin}/email-confirmed`,
       },
     });
@@ -44,7 +51,7 @@ export function Signup() {
       setError(supaError.message);
     } else {
       setMessage('Signup successful! Please check your email to confirm your account.');
-      setFormData({ fullName: '', email: '', password: '', confirmPassword: '' });
+      setFormData({ fullName: '', email: '', password: '', confirmPassword: '', gender: '' });
     }
     setIsLoading(false);
   };
@@ -71,6 +78,33 @@ export function Signup() {
           <Input type="text" id="fullName" name="fullName" value={formData.fullName} onChange={handleInputChange} required minLength={2} placeholder="Enter your full name" className="pl-10" />
         </div>
       </div>
+
+<div>
+  <Label htmlFor="gender">Gender</Label>
+  <div className="relative mt-1 -mb-3">
+    <UserSquare className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+    <select
+      id="gender"
+      name="gender"
+      value={formData.gender}
+      onChange={handleInputChange}
+      required
+      className={
+        "pl-10 flex h-10 w-full rounded-md border border-gray-300 px-3 py-2 text-sm " +
+        (formData.gender
+          ? "bg-[#E8F0FE] text-black border-black"
+          : "bg-neutral-900 text-neutral-400 placeholder:text-neutral-400") +
+        " focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+      }
+    >
+      <option value="" disabled>Select your gender</option>
+      <option value="Male">Male</option>
+      <option value="Female">Female</option>
+    </select>
+  </div>
+</div>
+
+
       <div>
         <Label htmlFor="email">Email Address</Label>
         <div className="relative -mb-3">
