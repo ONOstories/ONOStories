@@ -69,7 +69,7 @@ export function Footer() {
                 <a href="https://www.linkedin.com/company/ono-stories/about/?viewAsMember=true" target="_blank" rel="noopener noreferrer"><Linkedin /></a>
               </div>
               <h3 className="f-title mt-4">Contact & Support</h3>
-              <div className="-mt-4 text-[#4C1D95] font-light bold">
+              <div className="-mt-6 text-[#4C1D95] font-light bold">
                 <p>onostories@gmail.com</p>
               </div>
 
