@@ -62,12 +62,17 @@ export function Footer() {
 
             {/* Column 3: Social Links */}
             <div className="text-left lg:text-right">
-              <h3 className="f-title">Follow Us</h3>
-              <div className="f_social_icon">
+              <h3 className="f-title ">Follow Us</h3>
+              <div className="f_social_icon -mt-4">
                 <a href="https://x.com/onostoriess" target="_blank" rel="noopener noreferrer"><XLogo size={20} /></a>
                 <a href="https://www.instagram.com/onostories.app/?hl=en" target="_blank" rel="noopener noreferrer"><Instagram /></a>
                 <a href="https://www.linkedin.com/company/ono-stories/about/?viewAsMember=true" target="_blank" rel="noopener noreferrer"><Linkedin /></a>
               </div>
+              <h3 className="f-title mt-4">Contact & Support</h3>
+              <div className="-mt-4 text-[#4C1D95] font-light bold">
+                <p>onostories@gmail.com</p>
+              </div>
+
             </div>
           </div>
         </div>

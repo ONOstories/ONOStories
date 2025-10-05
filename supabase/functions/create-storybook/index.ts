@@ -18,7 +18,7 @@ interface StoryPage {
 async function updateStory(
   supabase: SupabaseClient,
   storyId: string,
-  updates: object,
+  updates: object
 ) {
   console.log(`[STORY ID: ${storyId}] Attempting to update with:`, updates);
   const { error } = await supabase
@@ -28,7 +28,7 @@ async function updateStory(
   if (error) {
     console.error(
       `[STORY ID: ${storyId}] FATAL: Could not update story. Reason:`,
-      error.message,
+      error.message
     );
     throw new Error(`Supabase update failed: ${error.message}`);
   } else {
@@ -50,8 +50,12 @@ async function safeGenerateImage(imagePrompt: string, fallbackPrompt?: string) {
   } catch (err) {
     // Handle OpenAI safety block error
     if (
-      String(err?.message || "").toLowerCase().includes("safety system") ||
-      String(err?.message || "").toLowerCase().includes("not allowed")
+      String(err?.message || "")
+        .toLowerCase()
+        .includes("safety system") ||
+      String(err?.message || "")
+        .toLowerCase()
+        .includes("not allowed")
     ) {
       console.warn("[DALL-E safety warning]", err.message, imagePrompt);
       if (fallbackPrompt) {
@@ -65,7 +69,11 @@ async function safeGenerateImage(imagePrompt: string, fallbackPrompt?: string) {
           });
           return resFallback.data[0]?.url;
         } catch (fallbackErr) {
-          console.warn("[DALL-E fallback also failed]", fallbackErr.message, fallbackPrompt);
+          console.warn(
+            "[DALL-E fallback also failed]",
+            fallbackErr.message,
+            fallbackPrompt
+          );
         }
       }
     }
@@ -80,7 +88,7 @@ serve(async (req) => {
   let storyId: string | null = null;
   const supabaseAdmin = createClient(
     Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   );
 
   try {
@@ -141,22 +149,31 @@ serve(async (req) => {
     for (let i = 0; i < storyPages.length; ++i) {
       const page = storyPages[i];
       // Use fallback prompt if safety filter triggers: remove all "reference photo" and just use a generic prompt
-      const safePrompt =
-        `${page.illustration_prompt}.
+      const safePrompt = `${page.illustration_prompt}.
         Style: beautiful children's book illustration, child character, clean line-work, soft vibrant colors. Do not include any text, captions, letters, or words in the image.`;
-      const fullPrompt =
-        `${childDescriptor}
-        ${page.illustration_prompt}.
-        Style: beautiful children's book illustration, consistent child appearance, consistent clothing as described above and shown in the reference, clean line-work, soft vibrant colors. 
-        Absolutely do NOT introduce any new clothing items, colors, patterns, or accessories. Do not include any text, captions, letters, or words in the image.`;
+      const fullPrompt = `
+${childDescriptor}.
+${page.illustration_prompt}.
+Style: ultra-detailed 3D Pixar-style children's illustration with cinematic lighting and realistic textures. 
+Render the child with consistent facial features, hairstyle, and clothing (exactly as described above and shown in the reference). 
+Use warm, soft lighting with a cozy, storybook atmosphere. 
+Focus on expressive eyes, natural skin tones, and lifelike depth of field. 
+Keep the environment richly detailed but child-friendly — use smooth edges, soft shadows, and gentle color gradients.
+Maintain the same outfit and proportions across all scenes.
+Do NOT introduce new clothing, accessories, or props beyond those described.
+Do NOT include any text, captions, or words in the image.
+`;
 
       const url = await safeGenerateImage(fullPrompt, safePrompt);
-      if (!url) throw new Error(`DALL-E 3 failed to generate image for page ${i + 1}.`);
+      if (!url)
+        throw new Error(`DALL-E 3 failed to generate image for page ${i + 1}.`);
       safeImageUrls.push(url);
     }
 
     if (safeImageUrls.length !== 5)
-      throw new Error("DALL-E 3 failed to generate all 5 images even after retries.");
+      throw new Error(
+        "DALL-E 3 failed to generate all 5 images even after retries."
+      );
     console.log(`[STORY ID: ${storyId}] Temporary image URLs received.`);
 
     const permanentImageUrls = await Promise.all(
@@ -172,13 +189,13 @@ serve(async (req) => {
           });
         if (uploadError)
           throw new Error(
-            `Failed to upload image ${index + 1}: ${uploadError.message}`,
+            `Failed to upload image ${index + 1}: ${uploadError.message}`
           );
         const {
           data: { publicUrl },
         } = supabaseAdmin.storage.from("storybooks").getPublicUrl(imagePath);
         return publicUrl;
-      }),
+      })
     );
     console.log(`[STORY ID: ${storyId}] Permanent image URLs created.`);
 
@@ -199,7 +216,7 @@ serve(async (req) => {
   } catch (error) {
     console.error(
       `[STORY ID: ${storyId ?? "Unknown"}] CRITICAL ERROR:`,
-      error.message,
+      error.message
     );
     if (storyId) {
       await supabaseAdmin

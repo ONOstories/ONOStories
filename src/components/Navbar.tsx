@@ -74,9 +74,10 @@ const Navbar = ({ forceSolidBackground = false }: NavbarProps) => {
         <div className={`relative flex items-center ${mobile ? "flex-col gap-3 mt-6 w-full" : "space-x-4"}`}>
           <button
             onClick={() => setProfileOpen(!profileOpen)}
-            className="rounded-full bg-gray-200 p-2 hover:bg-gray-300"
+            className="rounded-full bg-[#5584cd] p-2"
           >
-            <UserIcon className="h-6 w-6 text-gray-700" />
+
+            <UserIcon className="h-6 w-6 text-white" />
           </button>
           {/* MODIFICATION: Pass the `mobile` prop */}
           {profileOpen && <ProfileDropdown close={() => setProfileOpen(false)} mobile={mobile} />}
