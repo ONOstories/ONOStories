@@ -6,13 +6,13 @@ import { Star } from 'lucide-react';
 // This is the updated data
 const testimonialsData = [
   {
-    name: 'Minakshi M.',
+    name: 'Aavani',
     role: 'Parent',
     text: "Ryan really loved seeing himself as the astronaut, thank you for bringing the happiness.",
     rating: 5,
   },
   {
-    name: 'Parag R.',
+    name: 'Karthik',
     role: 'Parent',
     text: "The personalisation is actually expanding the imagination, my son made himself the superhero in his own universe.",
     rating: 5,
