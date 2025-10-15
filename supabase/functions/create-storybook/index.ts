@@ -1,3 +1,5 @@
+// supabase/functions/create-storybook/index.ts
+
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import {
   createClient,
@@ -6,9 +8,15 @@ import {
 import { OpenAI } from "https://esm.sh/openai@4.10.0";
 import { corsHeaders } from "../_shared/cors.ts";
 
+// Robust base64 encoder (avoids String.fromCharCode(...Uint8Array))
+import { encode as encodeBase64 } from "https://deno.land/std@0.177.0/encoding/base64.ts";
+
 const openai = new OpenAI({ apiKey: Deno.env.get("OPENAI_API_KEY") });
 const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
-const geminiApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`;
+
+// Use header-based auth (x-goog-api-key) and keep v1beta generateContent endpoint
+const geminiApiUrl =
+  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
 
 interface StoryPage {
   narration: string;
@@ -18,17 +26,14 @@ interface StoryPage {
 async function updateStory(
   supabase: SupabaseClient,
   storyId: string,
-  updates: object
+  updates: object,
 ) {
   console.log(`[STORY ID: ${storyId}] Attempting to update with:`, updates);
-  const { error } = await supabase
-    .from("stories")
-    .update(updates)
-    .eq("id", storyId);
+  const { error } = await supabase.from("stories").update(updates).eq("id", storyId);
   if (error) {
     console.error(
       `[STORY ID: ${storyId}] FATAL: Could not update story. Reason:`,
-      error.message
+      error.message,
     );
     throw new Error(`Supabase update failed: ${error.message}`);
   } else {
@@ -36,7 +41,6 @@ async function updateStory(
   }
 }
 
-// --- SAFETY-AWARE DALL-E PROMPT FUNCTION ---
 async function safeGenerateImage(imagePrompt: string, fallbackPrompt?: string) {
   try {
     const res = await openai.images.generate({
@@ -47,15 +51,10 @@ async function safeGenerateImage(imagePrompt: string, fallbackPrompt?: string) {
       response_format: "url",
     });
     return res.data[0]?.url;
-  } catch (err) {
-    // Handle OpenAI safety block error
+  } catch (err: any) {
     if (
-      String(err?.message || "")
-        .toLowerCase()
-        .includes("safety system") ||
-      String(err?.message || "")
-        .toLowerCase()
-        .includes("not allowed")
+      String(err?.message || "").toLowerCase().includes("safety system") ||
+      String(err?.message || "").toLowerCase().includes("not allowed")
     ) {
       console.warn("[DALL-E safety warning]", err.message, imagePrompt);
       if (fallbackPrompt) {
@@ -68,11 +67,11 @@ async function safeGenerateImage(imagePrompt: string, fallbackPrompt?: string) {
             response_format: "url",
           });
           return resFallback.data[0]?.url;
-        } catch (fallbackErr) {
+        } catch (fallbackErr: any) {
           console.warn(
             "[DALL-E fallback also failed]",
             fallbackErr.message,
-            fallbackPrompt
+            fallbackPrompt,
           );
         }
       }
@@ -81,14 +80,49 @@ async function safeGenerateImage(imagePrompt: string, fallbackPrompt?: string) {
   }
 }
 
+// Helper: fetch image, ensure it's an image, derive MIME, and base64-encode safely
+async function fetchAndEncodeImage(url: string) {
+  const res = await fetch(url, { redirect: "follow" });
+  if (!res.ok) {
+    throw new Error(`Could not fetch child photo: ${res.status} ${res.statusText}`);
+  }
+
+  // Try Content-Type header first
+  let mimeType = res.headers.get("content-type")?.split(";")[0]?.toLowerCase() ?? "";
+
+  // If header absent or not an image, infer from extension
+  if (!mimeType.startsWith("image/")) {
+    const ext = new URL(url).pathname.split(".").pop()?.toLowerCase() ?? "";
+    const map: Record<string, string> = {
+      jpg: "image/jpeg",
+      jpeg: "image/jpeg",
+      png: "image/png",
+      webp: "image/webp",
+      heic: "image/heic",
+      heif: "image/heif",
+    };
+    mimeType = map[ext] ?? "image/jpeg";
+  }
+
+  if (!mimeType.startsWith("image/")) {
+    throw new Error(`Photo URL is not an image (mime: ${mimeType}).`);
+  }
+
+  const arrBuf = await res.arrayBuffer();
+  const base64 = encodeBase64(new Uint8Array(arrBuf));
+
+  return { mimeType, base64 };
+}
+
 serve(async (req) => {
-  if (req.method === "OPTIONS")
+  if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
+  }
 
   let storyId: string | null = null;
   const supabaseAdmin = createClient(
     Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
   try {
@@ -104,8 +138,9 @@ serve(async (req) => {
       .select("*")
       .eq("id", storyId)
       .single();
-    if (fetchError || !storyRecord)
+    if (fetchError || !storyRecord) {
       throw new Error(`Failed to fetch story record: ${fetchError?.message}`);
+    }
 
     const {
       user_id,
@@ -115,66 +150,122 @@ serve(async (req) => {
       age,
       genre,
       short_description,
+      photo_url, // image for Gemini
     } = storyRecord;
 
-    const geminiPrompt = `
-      You are an expert children's story author. Create a simple, heartwarming 5-page story using simple English that a 10-year-old can read. Avoid big words and keep the story friendly and easy.
-      Output ONLY a valid JSON array of 5 objects. Each object must have "narration" (string, <=100 words) and "illustration_prompt" (string).
-      Details -> Name: ${child_name}, Age: ${age}, Gender: ${gender}, Title: ${title}, Genre: ${genre}, Description: ${short_description}`;
+    // 1) Describe the child from the photo using Gemini image understanding
+    console.log(
+      `[STORY ID: ${storyId}] Requesting child description from Gemini Vision.`,
+    );
 
-    const geminiResponse = await fetch(geminiApiUrl, {
+    const visionPrompt = `
+      Analyze the provided image of a child. Provide a detailed, factual description focusing on visual attributes for an AI illustrator.
+      Describe the following, keeping the descriptions concise and clear:
+      - Hair: color, style (e.g., short and straight, curly, long and wavy), and any notable features like bangs.
+      - Eyes: color.
+      - Skin tone: (e.g., light, medium, dark).
+      - Clothing: Describe the main outfit in detail, including the type of clothing (e.g., t-shirt, dress), color, and any patterns or graphics.
+      - Distinct features: Mention any highly visible and defining features like glasses, freckles, etc.
+      Combine this into a single, cohesive paragraph. This description will be used to create a consistent character in a storybook.
+    `.trim();
+
+    // Fetch and encode the image, and detect the correct mime type
+    const { mimeType, base64 } = await fetchAndEncodeImage(photo_url);
+
+    // Place the image part FIRST, then the text part; pass key via header
+    const visionResponse = await fetch(geminiApiUrl, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": geminiApiKey!,
+      },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: geminiPrompt }] }],
+        contents: [
+          {
+            parts: [
+              {
+                inline_data: {
+                  mime_type: mimeType,
+                  data: base64,
+                },
+              },
+              { text: visionPrompt },
+            ],
+          },
+        ],
+      }),
+    });
+
+    if (!visionResponse.ok) {
+      throw new Error(`Gemini Vision API error: ${await visionResponse.text()}`);
+    }
+
+    const visionResult = await visionResponse.json();
+    const characterDescriptionFromVision =
+      visionResult?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!characterDescriptionFromVision) {
+      throw new Error("Gemini Vision response was empty or malformed.");
+    }
+
+    console.log(
+      `[STORY ID: ${storyId}] Successfully received description: "${characterDescriptionFromVision}"`,
+    );
+
+    // 2) Generate Story Text
+    const storyPrompt = `
+      You are an expert children's story author. Create a simple, heartwarming 5-page story using simple English that a 10-year-old can read.
+      Output ONLY a valid JSON array of 5 objects. Each object must have "narration" (string, <=100 words) and "illustration_prompt" (string).
+      Details -> Name: ${child_name}, Age: ${age}, Gender: ${gender}, Title: ${title}, Genre: ${genre}, Description: ${short_description}
+    `.trim();
+
+    const storyResponse = await fetch(geminiApiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": geminiApiKey!,
+      },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: storyPrompt }] }],
         generationConfig: { responseMimeType: "application/json" },
       }),
     });
-    if (!geminiResponse.ok)
-      throw new Error(`Gemini API error: ${await geminiResponse.text()}`);
 
-    const geminiResult = await geminiResponse.json();
-    const storyText = geminiResult.candidates[0]?.content?.parts[0]?.text;
-    if (!storyText) throw new Error("Gemini response was empty or malformed.");
+    if (!storyResponse.ok) {
+      throw new Error(`Gemini API error: ${await storyResponse.text()}`);
+    }
+
+    const storyResult = await storyResponse.json();
+    const storyText = storyResult?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!storyText) throw new Error("Gemini story response was empty or malformed.");
+
     const storyPages: StoryPage[] = JSON.parse(storyText);
     console.log(`[STORY ID: ${storyId}] Story text generated.`);
 
-    const childDescriptor = `The main character is a child named ${child_name}, age ${age}, gender ${gender}. 
-      Match the child's facial features, skin tone, and hairstyle as seen in the following reference photo: ${storyRecord.photo_url}. 
-      For ALL story images, strictly make the main character wear the EXACT clothing shown in the reference photo, 
-      with the same color, pattern, sleeves, and accessories. Do not alter or vary the clothing style, color, or outfit at all from the reference. 
-      Repeat this clothing style consistently for every generated illustration.`;
+    // 3) Use the Gemini-generated description for DALL·E
+    const childDescriptor = `The main character is ${child_name}, an ${age}-year-old ${gender}.
+**Appearance details:** ${characterDescriptionFromVision}
+**Instruction for AI:** For ALL images, you must strictly and consistently draw the main character with the exact appearance, hairstyle, and clothing described above. Do not alter or vary the character's look across the illustrations.`;
 
-    const safeImageUrls = [];
+    const safeImageUrls: string[] = [];
     for (let i = 0; i < storyPages.length; ++i) {
       const page = storyPages[i];
-      // Use fallback prompt if safety filter triggers: remove all "reference photo" and just use a generic prompt
-      const safePrompt = `${page.illustration_prompt}.
-        Style: beautiful children's book illustration, child character, clean line-work, soft vibrant colors. Do not include any text, captions, letters, or words in the image.`;
-      const fullPrompt = `
-${childDescriptor}.
-${page.illustration_prompt}.
-Style: ultra-detailed 3D Pixar-style children's illustration with cinematic lighting and realistic textures. 
-Render the child with consistent facial features, hairstyle, and clothing (exactly as described above and shown in the reference). 
-Use warm, soft lighting with a cozy, storybook atmosphere. 
-Focus on expressive eyes, natural skin tones, and lifelike depth of field. 
-Keep the environment richly detailed but child-friendly — use smooth edges, soft shadows, and gentle color gradients.
-Maintain the same outfit and proportions across all scenes.
-Do NOT introduce new clothing, accessories, or props beyond those described.
-Do NOT include any text, captions, or words in the image.
-`;
+      const safePrompt = `${page.illustration_prompt}. Style: beautiful children's book illustration.`;
+      const fullPrompt = `${childDescriptor}
+
+**Scene:** ${page.illustration_prompt}
+
+**Style:** ultra-detailed 3D Pixar-style children's illustration with cinematic lighting. Do NOT include any text or words.`;
 
       const url = await safeGenerateImage(fullPrompt, safePrompt);
-      if (!url)
-        throw new Error(`DALL-E 3 failed to generate image for page ${i + 1}.`);
+      if (!url) throw new Error(`DALL-E 3 failed to generate image for page ${i + 1}.`);
       safeImageUrls.push(url);
     }
 
-    if (safeImageUrls.length !== 5)
-      throw new Error(
-        "DALL-E 3 failed to generate all 5 images even after retries."
-      );
-    console.log(`[STORY ID: ${storyId}] Temporary image URLs received.`);
+    if (safeImageUrls.length !== 5) {
+      throw new Error("DALL-E 3 failed to generate all 5 images.");
+    }
+    console.log(`[STORY ID: ${storyId}] All 5 image URLs received.`);
 
     const permanentImageUrls = await Promise.all(
       safeImageUrls.map(async (tempUrl, index) => {
@@ -187,17 +278,17 @@ Do NOT include any text, captions, or words in the image.
             contentType: "image/png",
             upsert: true,
           });
-        if (uploadError)
-          throw new Error(
-            `Failed to upload image ${index + 1}: ${uploadError.message}`
-          );
+        if (uploadError) {
+          throw new Error(`Failed to upload image ${index + 1}: ${uploadError.message}`);
+        }
         const {
           data: { publicUrl },
         } = supabaseAdmin.storage.from("storybooks").getPublicUrl(imagePath);
         return publicUrl;
-      })
+      }),
     );
-    console.log(`[STORY ID: ${storyId}] Permanent image URLs created.`);
+
+    console.log(`[STORY ID: ${storyId}] Images permanently stored.`);
 
     const storybookData = storyPages.map((page, index) => ({
       narration: page.narration,
@@ -213,21 +304,21 @@ Do NOT include any text, captions, or words in the image.
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error(
       `[STORY ID: ${storyId ?? "Unknown"}] CRITICAL ERROR:`,
-      error.message
+      error.message,
     );
     if (storyId) {
       await supabaseAdmin
         .from("stories")
         .update({
           status: "failed",
-          short_description: `Error: ${error.message.substring(0, 450)}`,
+          short_description: `Error: ${String(error.message).substring(0, 450)}`,
         })
         .eq("id", storyId);
     }
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: String(error.message) }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });
