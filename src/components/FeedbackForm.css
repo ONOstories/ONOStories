@@ -1,0 +1,164 @@
+.feedback-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.feedback-fab {
+    background: linear-gradient(to right, #9333EA, #DB2777);
+    color: white;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease-in-out;
+}
+
+.feedback-fab:hover {
+    transform: scale(1.1);
+}
+
+.feedback-form {
+    position: absolute;
+    bottom: 80px;
+    right: 0;
+    width: 320px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    opacity: 0;
+    transform: translateY(20px);
+    visibility: hidden;
+    transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s;
+}
+
+.feedback-container.open .feedback-form {
+    opacity: 1;
+    transform: translateY(0);
+    visibility: visible;
+}
+
+.feedback-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #2E1065;
+    margin: 0;
+}
+
+.feedback-subtitle {
+    font-size: 0.9rem;
+    color: #6b7280;
+    margin-top: -10px;
+}
+
+.emoji-inputs {
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0;
+}
+
+.emoji-btn {
+    font-size: 2.5rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.2s, filter 0.2s;
+    filter: grayscale(80%);
+    padding: 0;
+}
+
+.emoji-btn:hover {
+    transform: scale(1.2);
+}
+
+.emoji-btn.selected {
+    filter: grayscale(0%);
+    transform: scale(1.2);
+}
+
+.feedback-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.feedback-fields label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #4C1D95;
+}
+
+.feedback-fields input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.feedback-fields input:focus {
+    outline: none;
+    border-color: #9333EA;
+    box-shadow: 0 0 0 2px #9333ea30;
+}
+
+.submit-review-btn {
+    background: linear-gradient(to right, #9333EA, #DB2777);
+    color: white;
+    font-weight: 600;
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.submit-review-btn:hover {
+    opacity: 0.9;
+}
+
+.submit-review-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.feedback-form.submitted {
+    text-align: center;
+    gap: 10px;
+}
+/* ... (keep all your existing styles) ... */
+
+/* Add these new styles at the end of the file */
+.toggle-switch {
+    display: flex;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.toggle-switch button {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    background-color: #f9fafb;
+    color: #6b7280;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.toggle-switch button.active {
+    background: #9333EA;
+    color: white;
+}

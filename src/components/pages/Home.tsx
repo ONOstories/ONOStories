@@ -9,7 +9,7 @@ import { Footer } from '../../components/Footer';
 import { Hero } from '../../components/Hero'; // Corrected path assuming Hero is in components
 import Navbar from '../../components/Navbar'; // Corrected path assuming Navbar is in components
 import { Testimonials } from '../../components/testimonials'; // 1. Import the new component
-
+import { FeedbackForm } from '../FeedbackForm';
 export function Home() {
   const navigate = useNavigate();
   return (
@@ -34,6 +34,8 @@ export function Home() {
 
       {/* Footer */}
       <Footer />
+
+      <FeedbackForm />
     </div>
   );
 }

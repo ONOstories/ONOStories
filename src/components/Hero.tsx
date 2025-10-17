@@ -72,14 +72,14 @@ export function Hero() {
             </div>
           ))}
         </div>
-        <div className="arrows">
+        {/* <div className="arrows">
           <button className="prev" aria-label="Previous Image" onClick={handlePrev}>
             {'<'}
           </button>
           <button className="next" aria-label="Next Image" onClick={handleNext}>
             {'>'}
           </button>
-        </div>
+        </div> */}
       </div>
       <div className="absolute inset-0 bg-black/40 z-10" />
       <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center text-white p-4">
