@@ -137,9 +137,7 @@
     text-align: center;
     gap: 10px;
 }
-/* ... (keep all your existing styles) ... */
 
-/* Add these new styles at the end of the file */
 .toggle-switch {
     display: flex;
     border: 1px solid #e5e7eb;
@@ -161,4 +159,31 @@
 .toggle-switch button.active {
     background: #9333EA;
     color: white;
+}
+
+/* --- ✅ NEW: Mobile Optimizations --- */
+@media (max-width: 480px) {
+    .feedback-container {
+        bottom: 15px;
+        right: 15px;
+    }
+
+    .feedback-form {
+        width: calc(100vw - 30px); /* Full width minus side margins */
+        bottom: 75px;
+        right: 0;
+    }
+
+    .feedback-fab {
+        width: 50px;
+        height: 50px;
+    }
+
+    .feedback-title {
+        font-size: 1.1rem;
+    }
+
+    .emoji-btn {
+        font-size: 2rem;
+    }
 }
