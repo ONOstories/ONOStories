@@ -1,3 +1,4 @@
+// src/pages/StoryLibrary.tsx
 import { useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthProvider";
 import { Link, useNavigate } from "react-router-dom";
@@ -27,18 +28,19 @@ const StoryLibrary = () => {
 
   useEffect(() => {
     let isFirstLoad = true;
-    let intervalId: NodeJS.Timeout | null = null;
+    let intervalId: ReturnType<typeof setInterval> | null = null;
 
     const loadStories = async () => {
-      if (!user) return;
       try {
-        const res = await fetch('/edge/list-stories', { credentials: 'include' });
+        const endpoint = user ? '/edge/list-stories' : '/edge/list-stories?freeOnly=true';
+        const init = user ? { credentials: 'include' as const } : undefined;
+        const res = await fetch(endpoint, init);
         const j = await res.json();
-        if (!res.ok) throw new Error(j.error || 'Could not fetch your stories.');
+        if (!res.ok) throw new Error(j.error || 'Could not fetch stories.');
         setFreeStories(j.free ?? []);
-        setGeneratedStories(j.generated ?? []);
+        setGeneratedStories(user ? (j.generated ?? []) : []);
       } catch (e: any) {
-        toast.error(e.message || "Could not fetch your stories.");
+        toast.error(e.message || "Could not fetch stories.");
         if (isFirstLoad) {
           setFreeStories([]); setGeneratedStories([]);
         }
@@ -50,13 +52,10 @@ const StoryLibrary = () => {
       }
     };
 
-    if (user) {
-      setLoading(true);
-      loadStories();
-      intervalId = setInterval(loadStories, 4000);
-    } else {
-      setLoading(false);
-    }
+    setLoading(true);
+    loadStories();
+    intervalId = setInterval(loadStories, 4000);
+
     return () => { if (intervalId) clearInterval(intervalId); };
   }, [user]);
 
@@ -156,7 +155,7 @@ const StoryLibrary = () => {
             <p className="text-center text-[#4C1D95] mb-8">No free stories available at the moment.</p>
           )}
 
-          {/* --- Generated Stories Section (show for all users who have any generated story) --- */}
+          {/* --- Generated Stories Section (show for authenticated users) --- */}
           {generatedStories.length > 0 && (
             <>
               <h2 className="text-3xl font-extrabold text-[#9333EA] mb-4 mt-4">Generated Stories</h2>

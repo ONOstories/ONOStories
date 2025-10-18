@@ -1,3 +1,4 @@
+// src/components/Navbar.tsx
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthProvider";
@@ -5,23 +6,19 @@ import { Lock, Menu, X, User as UserIcon } from "lucide-react";
 import logo from '../assets/ONOstories_logo.jpg';
 import ProfileDropdown from "./ProfileDropdown";
 
-
 type NavbarProps = {
   forceSolidBackground?: boolean;
 };
-
 
 const Navbar = ({ forceSolidBackground = false }: NavbarProps) => {
   const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
-
   const atHome = location.pathname === "/";
   const [isScrolled, setIsScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-
 
   useEffect(() => {
     if (!atHome) return;
@@ -30,9 +27,7 @@ const Navbar = ({ forceSolidBackground = false }: NavbarProps) => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [atHome]);
 
-
   useEffect(() => { setMenuOpen(false); }, [location.pathname]);
-
 
   const requireAuth = (e: React.MouseEvent, targetPath: string) => {
     if (loading) return;
@@ -41,7 +36,6 @@ const Navbar = ({ forceSolidBackground = false }: NavbarProps) => {
       navigate('/login', { state: { redirectTo: targetPath, from: location.pathname } });
     }
   };
-
 
   const handleCreateStoriesClick = (e: React.MouseEvent) => {
     if (loading) return;
@@ -56,14 +50,11 @@ const Navbar = ({ forceSolidBackground = false }: NavbarProps) => {
     }
   };
 
-
   const showTransparent = atHome && !isScrolled && !forceSolidBackground;
   const isSolid = !showTransparent;
 
-
   const linkStyle = { textShadow: isSolid ? 'none' : '1px 1px 4px rgba(0, 0, 0, 0.7)' };
   const linkClassName = isSolid ? "text-gray-700 hover:text-indigo-600" : "text-white hover:text-gray-200";
-
 
   const renderAuthButtons = (mobile = false) => {
     if (loading) {
@@ -76,10 +67,8 @@ const Navbar = ({ forceSolidBackground = false }: NavbarProps) => {
             onClick={() => setProfileOpen(!profileOpen)}
             className="rounded-full bg-[#5584cd] p-2"
           >
-
             <UserIcon className="h-6 w-6 text-white" />
           </button>
-          {/* MODIFICATION: Pass the `mobile` prop */}
           {profileOpen && <ProfileDropdown close={() => setProfileOpen(false)} mobile={mobile} />}
         </div>
       );
@@ -104,7 +93,6 @@ const Navbar = ({ forceSolidBackground = false }: NavbarProps) => {
     );
   };
 
-
   const navLinks = (
     <>
       <Link
@@ -119,7 +107,7 @@ const Navbar = ({ forceSolidBackground = false }: NavbarProps) => {
       >About Us</Link>
       <Link
         to="/story-library"
-        onClick={e => requireAuth(e, '/story-library')}
+        // Keep public: do not gate with requireAuth
         className={`inline-flex items-center px-1 pt-1 text-sm font-bold transition-colors duration-300 ${linkClassName}`}
         style={linkStyle}
       >Story Library</Link>
@@ -143,7 +131,6 @@ const Navbar = ({ forceSolidBackground = false }: NavbarProps) => {
       >Pricing</Link>
     </>
   );
-
 
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300
@@ -191,6 +178,5 @@ const Navbar = ({ forceSolidBackground = false }: NavbarProps) => {
     </nav>
   );
 };
-
 
 export default Navbar;
