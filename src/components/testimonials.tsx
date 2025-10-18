@@ -1,9 +1,7 @@
 // src/components/Testimonials.tsx
-
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, MouseEvent } from 'react';
 import { Star } from 'lucide-react';
 
-// This is the updated data
 const testimonialsData = [
   {
     name: 'Aavani',
@@ -35,24 +33,56 @@ type TestimonialCardProps = {
 
 const TestimonialCard = ({ name, role, text, rating, index }: TestimonialCardProps) => {
   const [isAppearing, setIsAppearing] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  // State for the dynamic transform and transition styles
+  const [cardStyle, setCardStyle] = useState({});
 
   useEffect(() => {
-    const delay = 150 * index; // Staggered animation
+    const delay = 150 * index; // Staggered animation for initial load
     const timer = setTimeout(() => setIsAppearing(true), delay);
     return () => clearTimeout(timer);
   }, [index]);
 
+  const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current) return;
+
+    const { left, top, width, height } = cardRef.current.getBoundingClientRect();
+    const x = e.clientX - left;
+    const y = e.clientY - top;
+
+    // Calculate rotation based on cursor position; max rotation of 8 degrees
+    const rotateX = -((y - height / 2) / (height / 2)) * 8;
+    const rotateY = ((x - width / 2) / (width / 2)) * 8;
+
+    setCardStyle({
+      transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.05, 1.05, 1.05)`,
+      transition: 'transform 0.1s ease-out', // Fast transition for responsiveness
+    });
+  };
+
+  const handleMouseLeave = () => {
+    setCardStyle({
+      transform: 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)',
+      transition: 'transform 0.4s cubic-bezier(0.23, 1, 0.32, 1)', // Smooth transition on exit
+    });
+  };
+
   return (
     <div
-      className="card"
+      ref={cardRef}
+      className="card h-full flex"
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
       style={{
+        ...cardStyle,
         opacity: isAppearing ? 1 : 0,
-        transition: 'opacity 0.5s ease-in-out',
+        transition: `${(cardStyle as any).transition || 'transform 0.4s cubic-bezier(0.23, 1, 0.32, 1)'}, opacity 0.5s ease-in-out`,
       }}
     >
-      <div className="card__surface">
-        <div className="card__container">
-          <div className="card__content">
+      <div className="card__surface flex flex-col h-full">
+        <div className="card__container flex flex-col h-full">
+          <div className="card__content flex flex-col h-full">
             <div className="card__header">
               <h2 className="card__title">{name}</h2>
               <div className="card__badge">
@@ -61,8 +91,8 @@ const TestimonialCard = ({ name, role, text, rating, index }: TestimonialCardPro
                 ))}
               </div>
             </div>
-            <p className="card__description">“{text}”</p>
-            <div className="card__author-info">
+            <p className="card__description flex-1">“{text}”</p>
+            <div className="card__author-info mt-auto">
               <p className="card__author">{name}</p>
               <p className="card__role">{role}</p>
             </div>
@@ -81,7 +111,10 @@ export function Testimonials() {
           Happy Parents, Happy Kids
         </h2>
       </div>
-      <main className="testimonials-container" style={{ background: 'transparent' }}>
+      <main
+        className="testimonials-container grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch"
+        style={{ background: 'transparent' }}
+      >
         {testimonialsData.map((testimonial, i) => (
           <TestimonialCard key={i} index={i} {...testimonial} />
         ))}

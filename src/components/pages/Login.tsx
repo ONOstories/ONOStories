@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
-import ONOLogo from '../../assets/ONOstories_logo.jpg';
+import ONOLogo from '../../assets/ONOstories_logo.png';
 import { useAuth } from '../../contexts/AuthProvider';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';

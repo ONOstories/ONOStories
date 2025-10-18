@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, User, Eye, EyeOff, UserSquare } from 'lucide-react';
-import ONOLogo from '../../assets/ONOstories_logo.jpg';
+import ONOLogo from '../../assets/ONOstories_logo.png';
 import { supabase } from '../../lib/supabaseClient';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';

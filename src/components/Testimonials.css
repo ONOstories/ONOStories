@@ -1,23 +1,41 @@
 /* src/components/Testimonials.css */
 
 .testimonials-container {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 3em;
-  margin: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 2.5em;
+  max-width: 1200px;
+  margin: 0 auto;
+  align-items: stretch;
+  justify-items: center;
   padding: 1.5em 0;
-  width: calc(100% - 3em);
-  background-color: #f9fafb; /* Light gray background */
+  background: transparent;
 }
 
 .card {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   width: 100%;
   max-width: 25em;
+  min-height: 18em;
+  background: transparent;
+  /* Add perspective and transform-style for the 3D effect */
+  perspective: 1000px;
+  transform-style: preserve-3d;
+  /* The transition is now handled by inline styles from React */
   --hue: 260; /* Purple Hue */
   --sat: 80%;
+}
+
+.card:hover {
+  /* The transform is now JS-driven. We only apply the shadow here. */
+  box-shadow: 0 8px 30px hsla(var(--hue), var(--sat), 48%, 0.25);
+}
+
+/* On hover, make the inner surface pop out to enhance the 3D illusion */
+.card:hover .card__surface {
+  transform: translateZ(25px);
 }
 
 .card__surface {
@@ -26,8 +44,15 @@
   border-radius: 1em;
   box-shadow: 0 0.25em 0.625em hsla(0, 0%, 0%, 0.05);
   min-width: 0;
-  transition: background-color 0.3s;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  /* Add transition for the new translateZ effect */
+  transition: transform 0.4s cubic-bezier(.23,1,.32,1), box-shadow 0.4s cubic-bezier(.23,1,.32,1);
+  transform-style: preserve-3d;
 }
+
+/* --- No changes to the styles below --- */
 
 .card__header,
 .card__description {
@@ -46,7 +71,7 @@
 .card__title {
   font-size: 1.375em;
   font-weight: 600;
-  color: #2e1065; /* Dark Purple */
+  color: #2e1065;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -55,17 +80,40 @@
 .card__badge {
   display: flex;
   align-items: center;
-  color: #fbbf24; /* Amber-400 for stars */
+  color: #fbbf24;
 }
 
 .card__description {
   animation-delay: 0.2s;
-  color: #4c1d95; /* Medium Purple */
+  color: #4c1d95;
   margin-bottom: 2.25em;
   min-height: 4.5em;
   text-align: left;
   transition: color 0.3s;
   font-style: italic;
+  flex: 1;
+  line-height: 1.6;
+}
+
+.card__container {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.card__content {
+  padding: 2.25em;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.card__author-info {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .card__author {
@@ -74,35 +122,16 @@
 }
 
 .card__role {
-  color: #9333ea; /* Bright Purple */
+  color: #9333ea;
   font-size: 0.9em;
 }
 
-.card__container {
-  overflow: hidden;
-}
-
-.card__content {
-  padding: 2.25em;
-}
-
-/* Animations */
 @keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes fade-slide-up {
-  from {
-    opacity: 0;
-    transform: translateY(3em);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(3em);}
+  to {opacity: 1; transform: translateY(0);}
 }

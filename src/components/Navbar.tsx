@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthProvider";
 import { Lock, Menu, X, User as UserIcon } from "lucide-react";
-import logo from '../assets/ONOstories_logo.jpg';
+import logo from '../assets/ONOstories_logo.png';
 import ProfileDropdown from "./ProfileDropdown";
 
 type NavbarProps = {
@@ -139,7 +139,7 @@ const Navbar = ({ forceSolidBackground = false }: NavbarProps) => {
         <div className="flex justify-between items-center h-16">
           <div className="flex-shrink-0">
             <Link to="/">
-              <img className="h-10 w-auto" src={logo} alt="ONO Stories Logo" />
+              <img className="h-18 sm:h-20 w-auto object-contain" src={logo} alt="ONO Stories Logo" />
             </Link>
           </div>
           <div className="hidden sm:ml-6 sm:flex sm:space-x-8 items-center">

@@ -2,7 +2,7 @@
 "use client";
 import { Instagram,  Linkedin } from "lucide-react";
 import { Link } from "react-router-dom";
-import logo from '../assets/ONOstories_logo.jpg';
+import logo from '../assets/ONOstories_logo.png';
 
 function scrollToTop() {
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -29,9 +29,9 @@ export function Footer() {
             
             {/* Column 1: Brand */}
             <div className="flex flex-col items-start text-left">
-              <Link to="/" className="mb-4" onClick={scrollToTop}>
+              <Link to="/" className="mb-4 -mb-4 h-18 sm:h-20 w-auto object-contain" onClick={scrollToTop}>
                 <img
-                  className="h-12 w-auto"
+                  className="h-18 sm:h-20 w-auto object-contain"
                   src={logo}
                   alt="ONOStories Logo"
                 />
@@ -88,7 +88,7 @@ export function Footer() {
       <div className="footer_bottom">
         <div className="container mx-auto">
           <p className="-mb-4">
-            © {new Date().getFullYear()} ONOStories Inc. All rights reserved.
+            © {new Date().getFullYear()} ONO Stories Inc. All rights reserved.
           </p>
         </div>
       </div>

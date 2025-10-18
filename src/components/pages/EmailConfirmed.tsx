@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { CheckCircle2 } from 'lucide-react';
-import ONOLogo from '../../assets/ONOstories_logo.jpg';
+import ONOLogo from '../../assets/ONOstories_logo.png';
 import { supabase } from '../../lib/supabaseClient';
 
 export function EmailConfirmed() {

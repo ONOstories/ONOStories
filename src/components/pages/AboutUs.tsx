@@ -3,7 +3,7 @@ import { Linkedin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Navbar from '../Navbar';
 import { Footer } from '../Footer';
-import logo from '../../assets/ONOstories_logo.jpg';
+import logo from '../../assets/ONOstories_logo.png';
 import rohitImage from '../../assets/Rohit_Raut.jpg';
 
 // X (Twitter) SVG icon, minimal and bold for "X"
@@ -27,7 +27,7 @@ export function AboutUs() {
 
         {/* Hero Section */}
         <section className="flex flex-col items-center text-center mb-16">
-          <img src={logo} alt="ONO Stories Logo" className="w-32 h-32 rounded-full mt-8 mb-6 border-4 border-white shadow-lg justify-center" />
+          <img src={logo} alt="ONO Stories Logo" className="w-32 h-32 bg-white rounded-full mt-8 mb-6 border-4 border-white shadow-lg justify-center" />
           <h1 className="text-5xl font-extrabold bg-gradient-to-r from-[#4C1D95] to-[#2E1065] bg-clip-text text-transparent mb-6">
             AI Edutainment Platform for Kids
           </h1>

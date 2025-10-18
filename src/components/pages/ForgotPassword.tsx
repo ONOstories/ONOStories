@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail } from 'lucide-react';
-import ONOLogo from '../../assets/ONOstories_logo.jpg';
+import ONOLogo from '../../assets/ONOstories_logo.png';
 import { supabase } from '../../lib/supabaseClient';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
