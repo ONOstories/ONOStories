@@ -1,6 +1,7 @@
 // supabase/functions/auth-login/index.ts
 import { createServerClient } from 'https://esm.sh/@supabase/ssr@0.4.0';
 import { corsHeaders } from '../_shared/cors.ts';
+import { supabaseAdmin } from '../_shared/supabaseAdmin.ts';
 
 function parseCookies(header: string | null) {
   const map = new Map<string, string>();
@@ -48,9 +49,25 @@ Deno.serve(async (req) => {
 
   try {
     const { email, password } = await req.json();
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error || !data.session) {
-      return new Response(JSON.stringify({ error: error?.message ?? 'Unauthorized' }), { headers, status: 401 });
+
+    // 1. Check if user exists using the admin client
+    const { data: user, error: userError } = await supabaseAdmin
+      .from('profiles') // or 'users' in the 'auth' schema if you prefer
+      .select('id')
+      .eq('email', email)
+      .single();
+
+    if (userError || !user) {
+      // User not found, return a clear message. Use 401 for consistency.
+      return new Response(JSON.stringify({ error: 'Email not registered. Please sign up first.' }), { headers, status: 401 });
+    }
+
+    // 2. If user exists, attempt to sign in with password
+    const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (signInError || !data.session) {
+      // This will now correctly handle only the invalid password case
+      return new Response(JSON.stringify({ error: 'Invalid login credentials.' }), { headers, status: 401 });
     }
 
     for (const c of setCookies) headers.append('Set-Cookie', c);

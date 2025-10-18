@@ -106,7 +106,7 @@ export const CreateStories: React.FC = () => {
                 <div className="bg-gradient-to-r from-[#4C1D95] to-[#DB2777] p-2 rounded-full">
                   <User className="h-6 w-6 text-white" />
                 </div>
-                <h2 className="text-2xl font-semibold text-[#2E1065]">About the Hero</h2>
+                <h2 className="text-2xl font-semibold text-[#2E1065]">About the Star Kid</h2>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
