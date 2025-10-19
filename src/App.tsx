@@ -26,6 +26,7 @@ function App() {
           <Route path="/update-password" element={<UpdatePassword />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/story-library" element={<StoryLibrary />} />
+          <Route path="/story-loading" element={<StoryLoading />} />
           <Route path="/story/:storyId" element={<StorybookGem />} />
           <Route path="/email-confirmed" element={<EmailConfirmed />} />   
           {/* Protected Route for Create Stories */}
