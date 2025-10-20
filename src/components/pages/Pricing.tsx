@@ -6,7 +6,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthProvider";
 import { supabase } from "../../lib/supabaseClient";
 
-// Define the plan details
 const plansData = {
   monthly: { name: "Pro Monthly", price: 399, currency: "INR" },
   annual: { name: "Pro Annual", price: 4214, currency: "INR" },
@@ -42,13 +41,13 @@ export function Pricing() {
   // Main payment handler
   const handlePayment = async (planId: "monthly" | "annual") => {
     if (!user) {
-      navigate("/login");
+      // If not logged in, redirect to login with "redirectTo" to come back to pricing
+      navigate("/login", { state: { redirectTo: "/pricing" } });
       return;
     }
     setIsLoading(planId);
 
     try {
-      // 1. Create a Razorpay Order by calling our secure Supabase Function
       const { data: order, error: orderError } = await supabase.functions.invoke("create-razorpay-order", {
         body: { planId, userId: user.id },
       });
@@ -56,7 +55,6 @@ export function Pricing() {
       if (orderError) throw new Error(orderError.message);
       if (!order) throw new Error("Failed to create order.");
 
-      // 2. Open the Razorpay Checkout Modal
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: order.amount,
@@ -65,8 +63,6 @@ export function Pricing() {
         description: `Purchase ${plansData[planId].name} Plan`,
         order_id: order.id,
         handler: function () {
-          // This function is called after a successful payment.
-          // The webhook will handle the database update.
           alert("Payment successful! Your account will be updated shortly.");
           navigate("/");
         },
@@ -117,7 +113,6 @@ export function Pricing() {
             </span>
           </div>
         </header>
-
         {/* billing toggle */}
         <div className="flex justify-center mb-12">
           <div className="relative inline-flex rounded-full bg-white/90 shadow-lg">
@@ -150,7 +145,6 @@ export function Pricing() {
             </button>
           </div>
         </div>
-
         {/* pricing cards */}
         <div className="flex flex-wrap justify-center gap-8">
           {/* --- FREE PLAN --- */}
@@ -177,7 +171,6 @@ export function Pricing() {
               Get Started Free
             </button>
           </article>
-
           {/* --- PRO PLAN --- */}
           <article
             className="relative flex flex-col w-full max-w-sm bg-white rounded-2xl shadow-xl p-8 transition-all duration-200 hover:scale-105 hover:shadow-2xl"
@@ -197,7 +190,6 @@ export function Pricing() {
                     <span className="text-4xl font-extrabold text-[#2E1065]">
                       ₹4212
                       <span className="text-xs font-regular text-gray-500">/year</span>
-
                     </span>
                   </>
                 ) : (
@@ -205,7 +197,6 @@ export function Pricing() {
                     ₹{plansData.monthly.price} <span className="text-xs text-gray-500">/month</span>
                   </span>
                 )}
-                
               </div>
               <p className="text-[#4C1D95]/90">Full access to personalized storytelling</p>
             </div>
@@ -238,7 +229,6 @@ export function Pricing() {
               {isLoading === cycle ? "Processing..." : `Start Pro ${cycle === 'monthly' ? 'Monthly' : 'Annually'}`}
             </button>
           </article>
-
           {/* --- PREMIUM PLAN (Coming Soon) --- */}
           <article
             className="relative flex flex-col w-full max-w-sm bg-white rounded-2xl shadow-lg p-8 opacity-60 cursor-not-allowed transition-all duration-200 hover:scale-105 hover:shadow-2xl"

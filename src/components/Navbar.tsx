@@ -123,7 +123,6 @@ const Navbar = ({ forceSolidBackground = false }: NavbarProps) => {
       </Link>
       <Link
         to="/pricing"
-        onClick={e => requireAuth(e, '/pricing')}
         className={`inline-flex items-center px-1 pt-1 text-sm font-bold transition-colors duration-300 ${linkClassName}`}
         style={linkStyle}
       >Pricing</Link>
