@@ -165,8 +165,7 @@ serve(async (req) => {
       - Eyes: color.
       - Skin tone: (e.g., light, medium, dark).
       - Clothing: Describe the main outfit in detail, including the type of clothing (e.g., t-shirt, dress), color, and any patterns or graphics.
-      - Distinct features: Mention any highly visible and defining features like glasses, freckles, etc.
-      Combine this into a single, cohesive paragraph. This description will be used to create a consistent character in a storybook.
+      - Distinct features: Mention any highly visible and defining features like glasses, freckles, etc. Extract only the features related to the child.Combine this into a single, cohesive paragraph. This description will be used to create a consistent character in a storybook.
     `.trim();
 
     // Fetch and encode the image, and detect the correct mime type

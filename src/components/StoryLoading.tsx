@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Navbar from '../components/Navbar';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { useNavigate, useLocation } from "react-router-dom";
@@ -44,6 +44,30 @@ export const StoryLoading = () => {
   const { user } = useAuth();
 
   const storyId = location.state?.storyId;
+  const stopRef = useRef(false);
+
+  // Safe clear for intervals and timeouts
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const stageTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Progress animation per stage, but instantly jumps to completion if backend is ready.
+  useEffect(() => {
+    setProgress(0);
+    const stageDuration = 25000;
+    progressIntervalRef.current = setInterval(() => {
+      setProgress(prev => prev >= 100 ? 100 : prev + (100 / (stageDuration / 200)));
+    }, 200);
+
+    stageTimeoutRef.current = setTimeout(() => {
+      setProgress(0);
+      setCurrentStage(cs => (cs < stages.length - 1 ? cs + 1 : cs));
+    }, stageDuration);
+
+    return () => {
+      if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+      if (stageTimeoutRef.current) clearTimeout(stageTimeoutRef.current);
+    };
+  }, [currentStage]);
 
   useEffect(() => {
     if (!storyId || !user) {
@@ -52,15 +76,9 @@ export const StoryLoading = () => {
       return;
     }
 
-    let stop = false;
+    stopRef.current = false;
 
-    // Progress logic for animation only (UI, not the redirect logic)
-    setProgress(0);
-    const stageDuration = 20000;
-    const totalStages = stages.length;
-    let stageTimeout: NodeJS.Timeout | null = null;
-
-    // Backend poll logic
+    // --- Backend polling logic ---
     const pollStatus = async () => {
       try {
         setStatusText('Your story is being written and illustrated...');
@@ -70,12 +88,17 @@ export const StoryLoading = () => {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Status check failed');
         if (data.status === 'complete') {
+          // force the UI to final stage and fill bar for instant redirect experience:
+          setCurrentStage(stages.length - 1);
+          setProgress(100);
           toast.success('Your storybook is ready!');
-          navigate('/story-library');
+          setTimeout(() => navigate('/story-library'), 1500);
+          stopRef.current = true;
           return;
         }
         if (data.status === 'failed') {
           toast.error('There was an issue creating your story. Please try again.');
+          stopRef.current = true;
           navigate('/story-library');
           return;
         }
@@ -83,13 +106,13 @@ export const StoryLoading = () => {
         // Silent retry, show error only if polling fails repeatedly
         console.error('Status poll error:', e);
       }
-      if (!stop) setTimeout(pollStatus, 2000);
+      if (!stopRef.current) setTimeout(pollStatus, 2000);
     };
 
-    // Start backend process
+    // --- Start storybook generation if at step 0 (user just arrived on page) ---
     (async () => {
       try {
-        setStatusText('Warming up the AI storytellers...');
+        setStatusText('Please keep this page open, you’ll be redirected as soon as your story is ready.');
         const res = await fetch('/edge/create-storybook', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -107,24 +130,8 @@ export const StoryLoading = () => {
       }
     })();
 
-    // Stage UI animation for progression
-    const progressInterval = setInterval(() => {
-      setProgress(prev => prev >= 100 ? 100 : prev + (100 / (stageDuration / 200)));
-    }, 200);
-
-    stageTimeout = setTimeout(() => {
-      setProgress(0);
-      setCurrentStage(cs =>
-        cs < totalStages - 1 ? cs + 1 : cs
-      );
-    }, stageDuration);
-
-    return () => {
-      stop = true;
-      clearInterval(progressInterval);
-      if (stageTimeout) clearTimeout(stageTimeout);
-    };
-  // eslint-disable-next-line
+    return () => { stopRef.current = true; };
+    // eslint-disable-next-line
   }, [storyId, user, navigate]);
 
   const activeStage = stages[currentStage];
@@ -177,5 +184,4 @@ export const StoryLoading = () => {
     </div>
   );
 };
-
 export default StoryLoading;
