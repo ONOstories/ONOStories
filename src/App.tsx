@@ -51,22 +51,11 @@ const AppLoader = () => (
         />
       ))}
     </div>
-    <div className="text-center relative z-10">
-      <div className="mx-auto rounded-full bg-white/70 shadow-2xl w-36 h-36 flex items-center justify-center animate-app-loader-pulse-glow">
-        <img
-          src={logo}
-          alt="ONO Stories Logo"
-          className="mx-auto h-28 w-28 drop-shadow-lg"
-          style={{ filter: "drop-shadow(0 0 40px #e0bfff99)" }}
-        />
-      </div>
-      <p className="mt-7 text-xl font-bold text-purple-800 flex items-center justify-center gap-2">
-        Loading Magical Adventures
-        <span className="animate-app-loader-dots ml-2 text-pink-500 text-lg font-black">...</span>
+    <div className="text-center relative z-10 p-4">
+      <p className="text-lg md:text-xl font-bold text-purple-800 flex items-center justify-center gap-2">
+        Loading
+        <span className="animate-app-loader-dots ml-1 text-purple-800 text-base md:text-lg font-black">...</span>
       </p>
-      <div className="mt-3 flex items-center justify-center">
-        
-      </div>
     </div>
     <style>{`
       @keyframes apploader-float {

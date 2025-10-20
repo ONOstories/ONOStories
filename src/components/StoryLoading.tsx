@@ -141,7 +141,6 @@ export const StoryLoading = () => {
       <div className="absolute top-0 left-0 right-0 z-20">
         <Navbar />
       </div>
-      <div className="w-full max-w-2xl mx-auto p-2 sm:p-4 md:p-10 bg-white/90 rounded-2xl md:rounded-3xl shadow-xl relative z-10 mt-2 sm:mt-8">
         <div className="flex justify-center">
           <div className="relative w-full min-w-[12rem] max-w-[19rem] sm:max-w-[22rem] md:max-w-[28rem] aspect-square mx-auto">
             <DotLottieReact
@@ -180,7 +179,7 @@ export const StoryLoading = () => {
             ))}
           </div>
         </div>
-      </div>
+      
     </div>
   );
 };
