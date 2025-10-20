@@ -1,17 +1,30 @@
-// src/components/auth/EmailConfirmed.tsx
-import React, { useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { CheckCircle2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { CheckCircle2, PartyPopper } from 'lucide-react';
 import ONOLogo from '../../assets/ONOstories_logo.png';
-import { supabase } from '../../lib/supabaseClient';
 
 export function EmailConfirmed() {
-  // Avoid leaving a session in this verification tab
+  const navigate = useNavigate();
+  const [countdown, setCountdown] = useState(5);
+
   useEffect(() => {
-    // Scope: 'local' ensures only this device/tab session is cleared
-    // (keeps other sessions intact)
-    supabase.auth.signOut({ scope: 'local' });
-  }, []);
+    // This timer will count down every second.
+    const timer = setInterval(() => {
+      setCountdown((prevCountdown) => {
+        if (prevCountdown <= 1) {
+          clearInterval(timer);
+          // When the timer is done, redirect to the homepage.
+          // Supabase's auth provider will automatically handle the user's logged-in state.
+          navigate('/');
+          return 0;
+        }
+        return prevCountdown - 1;
+      });
+    }, 1000);
+
+    // This is a cleanup function to clear the interval if the user navigates away manually.
+    return () => clearInterval(timer);
+  }, [navigate]);
 
   return (
     <div
@@ -29,39 +42,27 @@ export function EmailConfirmed() {
             className="w-24 h-24 mx-auto rounded-full shadow-lg mb-4"
           />
           <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-            Email verified!
+            Email Verified!
           </h1>
           <p className="text-gray-600 mt-2">
-            You may now close this tab and sign in to continue your adventure.
+            Welcome to the ONOSTORIES family! Get ready to create magical adventures.
           </p>
         </div>
 
         <div className="flex flex-col items-center space-y-6">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 p-3 bg-green-100 rounded-full">
             <CheckCircle2 className="h-6 w-6 text-green-600" />
-            <span className="text-gray-700">
-              The email address is now confirmed.
+            <span className="text-gray-700 font-semibold">
+              Your email is now confirmed.
             </span>
           </div>
 
-          {/* <div className="w-full space-y-3">
-            <Link
-              to="/"
-              className="block w-full text-center bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-4 rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition-all"
-            >
-              Go to Home
-            </Link>
-            <Link
-              to="/login"
-              className="block w-full text-center bg-white text-purple-700 border border-purple-200 py-3 px-4 rounded-lg font-semibold hover:bg-purple-50 transition-all"
-            >
-              Sign in
-            </Link>
-          </div> */}
-
-          {/* <p className="text-sm text-gray-500 text-center">
-            This tab can be closed after proceeding.
-          </p> */}
+          <div className="mt-4 flex items-center space-x-2 rounded-full bg-gray-100 px-4 py-2">
+            <PartyPopper className="h-6 w-6 text-purple-600" />
+            <p className="font-semibold text-gray-600">
+              Redirecting you in {countdown} second{countdown !== 1 ? 's' : ''}...
+            </p>
+          </div>
         </div>
       </div>
     </div>
