@@ -1,4 +1,3 @@
-// src/components/Navbar.tsx
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthProvider";
@@ -107,7 +106,6 @@ const Navbar = ({ forceSolidBackground = false }: NavbarProps) => {
       >About Us</Link>
       <Link
         to="/story-library"
-        // Keep public: do not gate with requireAuth
         className={`inline-flex items-center px-1 pt-1 text-sm font-bold transition-colors duration-300 ${linkClassName}`}
         style={linkStyle}
       >Story Library</Link>
@@ -139,7 +137,11 @@ const Navbar = ({ forceSolidBackground = false }: NavbarProps) => {
         <div className="flex justify-between items-center h-16">
           <div className="flex-shrink-0">
             <Link to="/">
-              <img className="h-18 sm:h-20 w-auto object-contain" src={logo} alt="ONO Stories Logo" />
+              <img
+                className="h-14 sm:h-18 md:h-20 max-w-[8.5rem] w-auto object-contain"
+                src={logo}
+                alt="ONO Stories Logo"
+              />
             </Link>
           </div>
           <div className="hidden sm:ml-6 sm:flex sm:space-x-8 items-center">

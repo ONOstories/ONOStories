@@ -137,13 +137,13 @@ export const StoryLoading = () => {
   const activeStage = stages[currentStage];
 
   return (
-    <div className="h-screen flex flex-col items-center justify-center bg-gradient-to-br from-[#f3e7fe] via-[#f9c6e0] to-[#f7b267] p-4 relative overflow-hidden">
+    <div className="h-screen flex flex-col items-center justify-center bg-gradient-to-br from-[#f3e7fe] via-[#f9c6e0] to-[#f7b267] px-1 sm:px-4 pb-4 relative overflow-hidden">
       <div className="absolute top-0 left-0 right-0 z-20">
         <Navbar />
       </div>
-      <div className="w-full max-w-2xl mx-auto p-6 md:p-10 relative z-10">
+      <div className="w-full max-w-2xl mx-auto p-2 sm:p-4 md:p-10 bg-white/90 rounded-2xl md:rounded-3xl shadow-xl relative z-10 mt-2 sm:mt-8">
         <div className="flex justify-center">
-          <div className="relative w-[22rem] h-[22rem] md:w-[28rem] md:h-[28rem] mx-auto">
+          <div className="relative w-full min-w-[12rem] max-w-[19rem] sm:max-w-[22rem] md:max-w-[28rem] aspect-square mx-auto">
             <DotLottieReact
               src="https://lottie.host/98b7243b-8e7d-4c1f-a3bc-0c6d570d71dd/6NemHSKYix.lottie"
               loop
@@ -151,22 +151,22 @@ export const StoryLoading = () => {
             />
           </div>
         </div>
-        <div className="text-center mb-8 -mt-16">
-          <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-[#4C1D95] to-[#2E1065] bg-clip-text text-transparent mb-2">
+        <div className="text-center mb-6 sm:mb-8 -mt-10 sm:-mt-16">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-[#4C1D95] to-[#2E1065] bg-clip-text text-transparent mb-2">
             {activeStage.title}
           </h2>
-          <p className="text-base bg-gradient-to-r from-[#4C1D95] to-[#2E1065] bg-clip-text text-transparent max-w-md mx-auto">
+          <p className="text-sm sm:text-base bg-gradient-to-r from-[#4C1D95] to-[#2E1065] bg-clip-text text-transparent max-w-[95vw] sm:max-w-md mx-auto">
             {activeStage.description}
           </p>
-          <p className="text-base text-gray-500 mt-6">{statusText}</p>
+          <p className="text-xs sm:text-base text-gray-500 mt-3 sm:mt-6">{statusText}</p>
         </div>
-        <div className="px-4">
-          <progress value={progress} max="100" className="w-full h-4 [&::-webkit-progress-bar]:rounded-lg [&::-webkit-progress-bar]:bg-gray-200 [&::-webkit-progress-value]:rounded-lg [&::-webkit-progress-value]:bg-purple-600" />
-          <div className="flex justify-between items-start mt-3">
+        <div className="px-1 sm:px-4">
+          <progress value={progress} max="100" className="w-full h-3 sm:h-4 rounded-lg [&::-webkit-progress-bar]:rounded-lg [&::-webkit-progress-bar]:bg-gray-200 [&::-webkit-progress-value]:rounded-lg [&::-webkit-progress-value]:bg-purple-600" />
+          <div className="flex justify-between items-start mt-2 sm:mt-3">
             {stages.map((s, index) => (
               <div key={s.id} className="flex flex-col items-center text-center w-1/4">
                 <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all duration-500 ${
+                  className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold transition-all duration-500 ${
                     index < currentStage
                       ? "bg-green-400 text-white"
                       : index === currentStage
@@ -184,4 +184,5 @@ export const StoryLoading = () => {
     </div>
   );
 };
+
 export default StoryLoading;
