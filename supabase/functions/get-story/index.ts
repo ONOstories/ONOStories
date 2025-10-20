@@ -55,21 +55,26 @@ Deno.serve(async (req) => {
     }
   );
 
+  // Get user (but don't require authentication)
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user)
-    return new Response(JSON.stringify({ error: "Unauthenticated" }), {
-      headers,
-      status: 401,
-    });
 
-  const { data, error } = await supabase
+  // Build query based on whether user is authenticated or not
+  let query = supabase
     .from("stories")
     .select("title, storybook_data")
-    .eq("id", storyId)
-    .or(`user_id.eq.${user.id},is_free.eq.true`) // Allows if user is owner OR story is free
-    .single();
+    .eq("id", storyId);
+
+  if (user) {
+    // Authenticated user: can see their own stories OR free stories
+    query = query.or(`user_id.eq.${user.id},is_free.eq.true`);
+  } else {
+    // Anonymous user: can only see free stories
+    query = query.eq("is_free", true);
+  }
+
+  const { data, error } = await query.single();
 
   for (const c of setCookies) headers.append("Set-Cookie", c);
   if (error)

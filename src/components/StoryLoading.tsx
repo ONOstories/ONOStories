@@ -2,7 +2,6 @@ import { useEffect, useState, useRef } from "react";
 import Navbar from '../components/Navbar';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from '../contexts/AuthProvider';
 import { toast } from 'sonner';
 
 // --- Stage Data ---
@@ -41,7 +40,6 @@ export const StoryLoading = () => {
   const [statusText, setStatusText] = useState("Starting the magic...");
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, loading } = useAuth();
 
   const storyId = location.state?.storyId;
   const stopRef = useRef(false);
@@ -70,9 +68,8 @@ export const StoryLoading = () => {
   }, [currentStage]);
 
   useEffect(() => {
-    if (loading) return; // Don't check or run backend logic yet
-
-    if (!storyId || !user) {
+    // Only check for storyId now, never user
+    if (!storyId) {
       toast.error('Could not find the story to create. Returning to library.');
       navigate('/story-library');
       return;
@@ -90,7 +87,6 @@ export const StoryLoading = () => {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Status check failed');
         if (data.status === 'complete') {
-          // force the UI to final stage and fill bar for instant redirect experience:
           setCurrentStage(stages.length - 1);
           setProgress(100);
           toast.success('Your storybook is ready!');
@@ -105,13 +101,12 @@ export const StoryLoading = () => {
           return;
         }
       } catch (e: any) {
-        // Silent retry, show error only if polling fails repeatedly
         console.error('Status poll error:', e);
       }
       if (!stopRef.current) setTimeout(pollStatus, 2000);
     };
 
-    // --- Start storybook generation if at step 0 (user just arrived on page) ---
+    // --- Always call backend now
     (async () => {
       try {
         setStatusText('Please keep this page open, you’ll be redirected as soon as your story is ready.');
@@ -134,7 +129,7 @@ export const StoryLoading = () => {
 
     return () => { stopRef.current = true; };
     // eslint-disable-next-line
-  }, [storyId, user, loading, navigate]);
+  }, [storyId, navigate]);
 
   const activeStage = stages[currentStage];
 

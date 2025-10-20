@@ -35,6 +35,7 @@ const StorybookGem = () => {
     (async () => {
       if (!storyId) { toast.error('Story ID is missing.'); setLoading(false); return; }
       try {
+        // If stories are fully public, you can remove credentials: 'include'
         const res = await fetch(`/edge/get-story?storyId=${encodeURIComponent(storyId)}`, { credentials: 'include' });
         const j = await res.json();
         if (!res.ok || !j.story || !j.story.storybook_data)
@@ -51,6 +52,7 @@ const StorybookGem = () => {
 
   const handleDownload = async () => {
     if (!story) return;
+    // If /edge/track-download is public, you can remove credentials: 'include'
     const resp = await fetch('/edge/track-download', { method: 'POST', credentials: 'include' });
     if (!resp.ok) {
       const j = await resp.json().catch(() => ({}));
@@ -189,7 +191,7 @@ const StorybookGem = () => {
 
   return (
     <div className="flex h-screen flex-col bg-[#FDF8F3] font-serif">
-       <header className="flex items-center justify-between border-b border-gray-300 p-3 md:p-4">
+      <header className="flex items-center justify-between border-b border-gray-300 p-3 md:p-4">
         <button
           onClick={() => navigate('/story-library')}
           className="rounded-lg bg-gray-200 px-2 md:px-4 py-1.5 text-gray-700 hover:bg-gray-300 flex items-center"
