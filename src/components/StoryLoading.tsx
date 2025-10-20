@@ -41,7 +41,7 @@ export const StoryLoading = () => {
   const [statusText, setStatusText] = useState("Starting the magic...");
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
 
   const storyId = location.state?.storyId;
   const stopRef = useRef(false);
@@ -70,6 +70,8 @@ export const StoryLoading = () => {
   }, [currentStage]);
 
   useEffect(() => {
+    if (loading) return; // Don't check or run backend logic yet
+
     if (!storyId || !user) {
       toast.error('Could not find the story to create. Returning to library.');
       navigate('/story-library');
@@ -132,7 +134,7 @@ export const StoryLoading = () => {
 
     return () => { stopRef.current = true; };
     // eslint-disable-next-line
-  }, [storyId, user, navigate]);
+  }, [storyId, user, loading, navigate]);
 
   const activeStage = stages[currentStage];
 
@@ -179,7 +181,6 @@ export const StoryLoading = () => {
             ))}
           </div>
         </div>
-      
     </div>
   );
 };

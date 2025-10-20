@@ -172,7 +172,7 @@ export function Pricing() {
               <li className="flex items-start gap-3"><Check className="h-5 w-5 text-emerald-500 mt-0.5" /><span className="text-[#4C1D95]">Basic story experience</span></li>
             </ul>
             <button
-              onClick={() => navigate("/signup")}
+              onClick={() => navigate("/story-library")}
               className="w-full py-3 mt-8 rounded-xl font-semibold text-white bg-gray-500 hover:bg-gray-600 transition">
               Get Started Free
             </button>
