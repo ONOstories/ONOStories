@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import Navbar from '../components/Navbar';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from '../contexts/AuthProvider';
+import { toast } from 'sonner';
 
 // --- Stage Data ---
 interface Stage {
@@ -36,35 +38,94 @@ const stages: Stage[] = [
 export const StoryLoading = () => {
   const [currentStage, setCurrentStage] = useState(0);
   const [progress, setProgress] = useState(0);
+  const [statusText, setStatusText] = useState("Starting the magic...");
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth();
+
+  const storyId = location.state?.storyId;
 
   useEffect(() => {
-    const stageDuration = 25000; // 20 seconds per stage
+    if (!storyId || !user) {
+      toast.error('Could not find the story to create. Returning to library.');
+      navigate('/story-library');
+      return;
+    }
 
-    // Progress bar for each stage (fills from 0 to 100)
+    let stop = false;
+
+    // Progress logic for animation only (UI, not the redirect logic)
     setProgress(0);
+    const stageDuration = 20000;
+    const totalStages = stages.length;
+    let stageTimeout: NodeJS.Timeout | null = null;
+
+    // Backend poll logic
+    const pollStatus = async () => {
+      try {
+        setStatusText('Your story is being written and illustrated...');
+        const res = await fetch(`/edge/story-status?storyId=${encodeURIComponent(storyId)}`, {
+          credentials: 'include',
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Status check failed');
+        if (data.status === 'complete') {
+          toast.success('Your storybook is ready!');
+          navigate('/story-library');
+          return;
+        }
+        if (data.status === 'failed') {
+          toast.error('There was an issue creating your story. Please try again.');
+          navigate('/story-library');
+          return;
+        }
+      } catch (e: any) {
+        // Silent retry, show error only if polling fails repeatedly
+        console.error('Status poll error:', e);
+      }
+      if (!stop) setTimeout(pollStatus, 2000);
+    };
+
+    // Start backend process
+    (async () => {
+      try {
+        setStatusText('Warming up the AI storytellers...');
+        const res = await fetch('/edge/create-storybook', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ storyId }),
+        });
+        if (!res.ok) {
+          const j = await res.json().catch(() => ({}));
+          throw new Error(j.error || 'Failed to start');
+        }
+        pollStatus();
+      } catch (err: any) {
+        toast.error(`Error starting story creation: ${err.message}`);
+        setTimeout(() => navigate('/story-library'), 3000);
+      }
+    })();
+
+    // Stage UI animation for progression
     const progressInterval = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 100) return 100;
-        return prev + (100 / (stageDuration / 200));
-      });
+      setProgress(prev => prev >= 100 ? 100 : prev + (100 / (stageDuration / 200)));
     }, 200);
 
-    // Advance to next stage
-    const stageTimeout = setTimeout(() => {
-      if (currentStage < stages.length - 1) {
-        setCurrentStage(prev => prev + 1);
-      } else {
-        clearInterval(progressInterval);
-        setTimeout(() => navigate("/story-library"), 1500);
-      }
+    stageTimeout = setTimeout(() => {
+      setProgress(0);
+      setCurrentStage(cs =>
+        cs < totalStages - 1 ? cs + 1 : cs
+      );
     }, stageDuration);
 
     return () => {
+      stop = true;
       clearInterval(progressInterval);
-      clearTimeout(stageTimeout);
+      if (stageTimeout) clearTimeout(stageTimeout);
     };
-  }, [currentStage, navigate]);
+  // eslint-disable-next-line
+  }, [storyId, user, navigate]);
 
   const activeStage = stages[currentStage];
 
@@ -73,8 +134,6 @@ export const StoryLoading = () => {
       <div className="absolute top-0 left-0 right-0 z-20">
         <Navbar />
       </div>
-      
-      {/* Card perfectly centered */}
       <div className="w-full max-w-2xl mx-auto p-6 md:p-10 relative z-10">
         <div className="flex justify-center">
           <div className="relative w-[22rem] h-[22rem] md:w-[28rem] md:h-[28rem] mx-auto">
@@ -85,7 +144,6 @@ export const StoryLoading = () => {
             />
           </div>
         </div>
-
         <div className="text-center mb-8 -mt-16">
           <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-[#4C1D95] to-[#2E1065] bg-clip-text text-transparent mb-2">
             {activeStage.title}
@@ -93,8 +151,8 @@ export const StoryLoading = () => {
           <p className="text-base bg-gradient-to-r from-[#4C1D95] to-[#2E1065] bg-clip-text text-transparent max-w-md mx-auto">
             {activeStage.description}
           </p>
+          <p className="text-base text-gray-500 mt-6">{statusText}</p>
         </div>
-
         <div className="px-4">
           <progress value={progress} max="100" className="w-full h-4 [&::-webkit-progress-bar]:rounded-lg [&::-webkit-progress-bar]:bg-gray-200 [&::-webkit-progress-value]:rounded-lg [&::-webkit-progress-value]:bg-purple-600" />
           <div className="flex justify-between items-start mt-3">
